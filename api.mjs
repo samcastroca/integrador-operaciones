@@ -2,6 +2,7 @@
 import axios from "axios";
 import moment from 'moment-timezone';
 import logger from "./logger.mjs";
+import { guardarLogFactura } from "./facturaLogs.sqlite.mjs";
 
 /**
  * Función auxiliar para enviar POST
@@ -394,7 +395,7 @@ export async function enviarFacturasProcesadas(nit, ip_del_servidor, puerto, rec
 
         console.log(JSON.stringify(procesados));
 
-        //await enviarFacturasFaktur(procesados);
+        await enviarFacturasFaktur(procesados);
 
 
     }
@@ -483,8 +484,8 @@ async function crearFactura(data, { timeoutMs = 15000 } = {}) {
  * Envío en paralelo con reintentos individuales por factura.
  * Limita logs y muestra un resumen final.
  */
-export async function enviarFacturasFaktur(procesados) {
-    const intentos = 3;
+async function enviarFacturasFaktur(procesados) {
+    const intentos = 3; // intentos configurados en conReintentos
 
     const tareas = procesados.map((data, idx) =>
         conReintentos(
@@ -506,43 +507,59 @@ export async function enviarFacturasFaktur(procesados) {
 
     const resultadoEnvio = await Promise.allSettled(tareas);
 
-    // Logs individuales
-    resultadoEnvio.forEach((result, i) => {
-        if (result.status === "fulfilled") {
-            // Axios: result.value suele ser la Response
-            const res = result.value;
-            const reqConfig = res?.config ?? {};
+    // IMPORTANTE: necesitamos await, así que usamos for..of
+    for (let i = 0; i < resultadoEnvio.length; i++) {
+        const result = resultadoEnvio[i];
+        const data = procesados[i];
+        const operationId = data.operation_id; // viene del payloadFaktur
 
-            console.log(reqConfig.data);
-            /*logger.info("Factura enviada OK", {
-                item: i,
-                status: res?.status,
-                req: dumpReq(reqConfig),
-                resHeaders: res?.headers,
-            });*/
+        if (result.status === "fulfilled") {
+            const res = result.value; // AxiosResponse
+            const httpStatus = res?.status ?? null;
+            const responseBody = res?.data;
+
+            // Guardamos en SQLite
+            guardarLogFactura({
+                operationId,
+                success: true,
+                httpStatus,
+                intento: intentos,   // número de intentos configurado (si quieres algo más fino luego lo cambiamos)
+                requestBody: data,
+                responseBody,
+                errorMessage: null,
+            });
+
+            // Si quieres, puedes seguir logueando por consola/Winston:
+            // logger.info("Factura enviada OK", { item: i, status: httpStatus, operationId });
         } else {
             const err = result.reason;
-            const status = err?.response?.status ?? "NET";
-            const data = err?.response?.data;
-            /*logger.error("Factura falló tras reintentos", {
-                item: i,
-                intentos,
-                status,
-                msg: err?.message || String(err),
-                req: dumpReq(err?.config),
-                // No volcamos todo 'data' crudo si es enorme:
-                resData: typeof data === "object" ? truncate(JSON.stringify(data)) : truncate(String(data ?? "")),
-            });*/
-        }
-    });
+            const httpStatus = err?.response?.status ?? null;
+            const responseBody = err?.response?.data ?? null;
+            const errorMessage = err?.message || String(err);
 
-    // Resumen final
+            guardarLogFactura({
+                operationId,
+                success: false,
+                httpStatus,
+                intento: intentos,
+                requestBody: data,
+                responseBody,
+                errorMessage,
+            });
+
+            // logger.error("Factura falló tras reintentos", { item: i, status: httpStatus, operationId, errorMessage });
+        }
+    }
+
+    // Resumen final (puedes dejarlo igual)
     const ok = resultadoEnvio.filter((r) => r.status === "fulfilled").length;
     const fail = resultadoEnvio.length - ok;
-    //logger.info("Resumen envío facturas", { ok, fail, total: resultadoEnvio.length });
 
-    return resultadoEnvio;
+    console.log(`Resumen envío a Faktur: OK=${ok}, FAIL=${fail}, TOTAL=${resultadoEnvio.length}`);
+
+    return { ok, fail, total: resultadoEnvio.length };
 }
+
 
 
 //funciones del logger seguras

@@ -2,6 +2,7 @@
 import express from "express";
 import { autenticacion, obtenerUsuario, enviarFacturasProcesadas } from "./api.mjs";
 import logsRouter from "./logs.routes.mjs";
+import facturaLogsRouter from "./facturaLogs.routes.mjs";
 
 const app = express();
 
@@ -91,8 +92,13 @@ app.post("/api/procesar", async (req, res) => {
 });
 
 
+// Nuevas rutas de logs de facturas en SQLite
+app.use("/logs/facturas", facturaLogsRouter);
+
 // Montar las rutas de logs protegidas
-app.use("/logs", logsRouter);
+//app.use("/logs", logsRouter);
+
+
 
 
 const PORT = process.env.PORT || 3000;
