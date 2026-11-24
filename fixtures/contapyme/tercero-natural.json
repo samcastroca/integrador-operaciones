@@ -1,0 +1,23 @@
+{
+  "result": [
+    {
+      "encabezado": { "resultado": "true", "mensaje": "" },
+      "respuesta": {
+        "datos": {
+          "infobasica": {
+            "init": "1010101010",
+            "idigchequeo": "",
+            "itddocum": "13",
+            "bempresa": "F",
+            "ntercero": "JUAN CARLOS",
+            "napellido": "PÉREZ GÓMEZ",
+            "sclasiflegal": "",
+            "idep": "11",
+            "imun": "001",
+            "ipais": "169"
+          }
+        }
+      }
+    }
+  ]
+}

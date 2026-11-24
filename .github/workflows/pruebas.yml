@@ -1,0 +1,26 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [main, "etapa/**"]
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: better-sqlite3 carga (binario precompilado, 7.3)
+        run: node -e "const D=require('better-sqlite3'); new D(':memory:').prepare('select 1').get()"
+      - name: Pruebas
+        run: npm test
