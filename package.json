@@ -4,8 +4,8 @@
   "description": "",
   "main": "importador_facturas_plazo.mjs",
   "scripts": {
-    "start": "node --max-old-space-size=8192 importador_facturas_plazo.mjs",
-    "manual": "node --max-old-space-size=8192 importador_facturas_manual.mjs"
+    "start": "node --env-file=.env --max-old-space-size=8192 importador_facturas_plazo.mjs",
+    "manual": "node --env-file=.env --max-old-space-size=8192 importador_facturas_manual.mjs"
   },
   "keywords": [],
   "author": "",

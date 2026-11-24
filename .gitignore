@@ -2,3 +2,14 @@ node_modules/
 dist/
 .env
 *.log
+
+# Datos locales: credenciales, bitácora y base SQLite
+*.local.txt
+logs/
+datos/
+*.sqlite
+*.sqlite-*
+
+# Contexto para el agente (local, no se versiona)
+CLAUDE.md
+contexto/
