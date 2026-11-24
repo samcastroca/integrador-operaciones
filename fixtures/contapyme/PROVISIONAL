@@ -1,0 +1,3 @@
+Estos fixtures son SINTÉTICOS: se armaron a partir de las rutas que lee api.mjs, no de respuestas reales.
+La etapa 1 (subtareas 1.5–1.8) los sustituye por capturas reales anonimizadas y borra este archivo.
+Mientras exista, las pruebas de la etapa 1 fallan a propósito.

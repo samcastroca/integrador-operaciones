@@ -2,10 +2,14 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "main": "importador_facturas_plazo.mjs",
+  "main": "importador_facturas_manual.mjs",
+  "config": {
+    "etapa": 0
+  },
   "scripts": {
-    "start": "node --env-file=.env --max-old-space-size=8192 importador_facturas_plazo.mjs",
-    "manual": "node --env-file=.env --max-old-space-size=8192 importador_facturas_manual.mjs"
+    "start": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_plazo.mjs",
+    "manual": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_manual.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "keywords": [],
   "author": "",

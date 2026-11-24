@@ -1,0 +1,34 @@
+{
+  "complete_invoice": true,
+  "operation_id": "FV-1001",
+  "operation_type": "V",
+  "operation_issue_date": "2026-11-20",
+  "operation_expiration_date": "2026-11-20",
+  "currency": "COP",
+  "main_sender": "900999999",
+  "secondary_sender": {
+    "document_type": "C",
+    "document_number": "1010101010",
+    "verification_digit": "",
+    "person_type": "N",
+    "commercial_name": "JUAN CARLOS",
+    "initials": "JUAN CARLOS",
+    "statal_entity": false,
+    "consortium": false,
+    "aggregation_code": 3,
+    "city_code": "11001",
+    "country_code": "169",
+    "first_name": "JUAN CARLOS",
+    "last_name": "PÉREZ",
+    "secondary_last_name": "GÓMEZ"
+  },
+  "total_value": 119000,
+  "end_value": 119000,
+  "delivery_city_code": "05001",
+  "delivery_country_code": "169",
+  "payment_method": 1,
+  "delivery_warehouse": "V",
+  "products": [
+    { "product": "P001", "quantity": 2, "unitary_price": 50000, "tax": 0.19, "total_price": 119000 }
+  ]
+}

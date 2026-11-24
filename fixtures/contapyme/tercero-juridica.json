@@ -1,0 +1,23 @@
+{
+  "result": [
+    {
+      "encabezado": { "resultado": "true", "mensaje": "" },
+      "respuesta": {
+        "datos": {
+          "infobasica": {
+            "init": "900123456",
+            "idigchequeo": "7",
+            "itddocum": "31",
+            "bempresa": "T",
+            "ntercero": "EMPRESA DE PRUEBAS S.A.S.",
+            "napellido": "",
+            "sclasiflegal": "PJ;",
+            "idep": "05",
+            "imun": "001",
+            "ipais": "169"
+          }
+        }
+      }
+    }
+  ]
+}

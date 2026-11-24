@@ -1,0 +1,31 @@
+{
+  "result": [
+    {
+      "encabezado": { "resultado": "true", "mensaje": "" },
+      "respuesta": {
+        "datos": [
+          {
+            "itdoper": "ING1",
+            "fcreacion": "11/20/2026",
+            "inumoper": "1001",
+            "tdetalle": "Factura de venta",
+            "ncorto": "FV",
+            "iestado": "2",
+            "ntdsop": "Factura electrónica",
+            "ntercero": "JUAN CARLOS PÉREZ GÓMEZ",
+            "iprocess": "2",
+            "fsoport": "11/20/2026",
+            "snumsop": "FV-1001",
+            "qerror": "0",
+            "qwarning": "0",
+            "banulada": "F",
+            "mingresos": "119000",
+            "megresos": "0",
+            "mtotaloperacion": "119000"
+          }
+        ],
+        "paginacion": { "pagina": "1", "totalpaginas": "1", "totalregistros": "1" }
+      }
+    }
+  ]
+}

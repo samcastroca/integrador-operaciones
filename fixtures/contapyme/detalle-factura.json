@@ -1,0 +1,24 @@
+{
+  "result": [
+    {
+      "encabezado": { "resultado": "true", "mensaje": "" },
+      "respuesta": {
+        "datos": {
+          "encabezado": {
+            "itdoper": "ING1",
+            "inumoper": "1001",
+            "snumsop": "FV-1001",
+            "fsoport": "11/20/2026",
+            "fcreacion": "11/20/2026",
+            "mtotaloperacion": "119000"
+          },
+          "datosprincipales": { "init": "1010101010" },
+          "listaproductos": [
+            { "irecurso": "P001", "qproducto": "2", "mprecio": "50000", "qporciva": "19", "mvrtotal": "119000" }
+          ],
+          "formacobro": { "fcobrocxc": [{ "qdiascxc": "30" }] }
+        }
+      }
+    }
+  ]
+}
