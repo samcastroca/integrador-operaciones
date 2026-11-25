@@ -2,37 +2,31 @@
   "complete_invoice": true,
   "operation_id": "FV-1001",
   "operation_type": "V",
-  "operation_issue_date": "2026-11-20",
-  "operation_expiration_date": "2026-11-20",
+  "operation_issue_date": "2026-07-31",
+  "operation_expiration_date": "2026-07-31",
   "currency": "COP",
   "main_sender": "900999999",
   "secondary_sender": {
     "document_type": "A",
     "document_number": "900123456",
-    "verification_digit": "7",
+    "verification_digit": "8",
     "person_type": "J",
-    "commercial_name": "EMPRESA DE PRUEBAS S.A.S.",
-    "initials": "EMPRESA DE PRUEBAS S.A.S.",
+    "commercial_name": "NH ODDB XF MDS VIYCGPAZ NMFKGT HPZ",
+    "initials": "NH ODDB XF MDS VIYCGPAZ NMFKGT HPZ",
     "statal_entity": false,
     "consortium": false,
     "aggregation_code": 3,
-    "city_code": "05001",
+    "city_code": "11001",
     "country_code": "169",
-    "social_reason": "EMPRESA DE PRUEBAS S.A.S."
+    "social_reason": "NH ODDB XF MDS VIYCGPAZ NMFKGT HPZ"
   },
-  "total_value": 119000,
-  "end_value": 119000,
-  "delivery_city_code": "05001",
+  "total_value": 76000,
+  "end_value": 76000,
+  "delivery_city_code": "11001",
   "delivery_country_code": "169",
-  "payment_method": 1,
+  "payment_method": 20,
   "delivery_warehouse": "V",
   "products": [
-    {
-      "product": "P001",
-      "quantity": 2,
-      "unitary_price": 50000,
-      "tax": 0.19,
-      "total_price": 119000
-    }
+    { "product": "STEV3193BL12", "quantity": 1, "unitary_price": 80000, "tax": 0.19, "total_price": 76000 }
   ]
 }

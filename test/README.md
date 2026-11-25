@@ -70,9 +70,9 @@ stack ni jerga de HTTP.
 
 ## Fixtures
 
-`fixtures/contapyme/` contiene ahora mismo datos **sintéticos**, y lo indica el archivo
-`PROVISIONAL`. La etapa 1 los sustituye por capturas reales anonimizadas, borra el marcador y añade
-`fixtures/faktur/respuesta-{exito,error}.json`.
+`fixtures/contapyme/` contiene capturas reales del ContaPyme de pruebas, anonimizadas con
+`scripts/exploracion/anonimizar.mjs` (etapa 1), y `fixtures/faktur/respuesta-{exito,error}.json`, las
+respuestas reales de `develop.faktur.co`.
 
-`test/esperados/` guarda el payload que debe recibir Faktur con esos fixtures. Cambia cuando se
-confirme una regla de la etapa 6.
+`test/esperados/` guarda el payload que debe recibir Faktur con esos fixtures, derivado a mano campo
+por campo. Cambia cuando se confirme una regla de la etapa 6.
