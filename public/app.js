@@ -1,34 +1,29 @@
-// Interfaz del integrador: asistente y pantalla de configuración (etapa 2).
-const $ = (id) => document.getElementById(id);
+// Interfaz del integrador: navegación, asistente y pantalla de configuración.
+import { $, mostrarMensaje, pedir } from "./comun.js";
+import { iniciarEnvio } from "./enviar.js";
+
 const form = $("form-config");
 const CAMPOS = ["ip", "puerto", "email", "contrasena", "iapp", "nit", "fakturUrl", "fakturToken"];
 const SECRETOS = ["contrasena", "fakturToken"];
+const PANTALLAS = ["enviar", "configuracion"];
+let configurado = false;
 
-async function pedir(url, { method = "GET", body } = {}) {
-    try {
-        const res = await fetch(url, {
-            method,
-            headers: body ? { "Content-Type": "application/json" } : {},
-            body: body ? JSON.stringify(body) : undefined,
-        });
-        return { status: res.status, datos: await res.json() };
-    } catch {
-        return { status: 0, datos: { ok: false, mensaje: "No se pudo comunicar con el integrador. ¿Sigue abierto?" } };
+/** Muestra la pantalla del hash; sin configuración, toda ruta lleva al asistente. */
+function navegar() {
+    const pedida = location.hash.slice(1);
+    const pantalla = !configurado ? "configuracion" : PANTALLAS.includes(pedida) ? pedida : "enviar";
+    for (const p of PANTALLAS) $(p).hidden = p !== pantalla;
+    for (const a of document.querySelectorAll("#menu .nav-link")) {
+        a.classList.toggle("active", a.getAttribute("href") === `#${pantalla}`);
     }
-}
-
-function mostrarMensaje(texto, tipo) {
-    const m = $("mensaje");
-    m.textContent = texto;
-    m.className = `alert alert-${tipo}`;
-    m.hidden = false;
+    if (pantalla === "enviar") iniciarEnvio();
 }
 
 function leerFormulario() {
     return Object.fromEntries(CAMPOS.map((c) => [c, form.elements[c].value.trim()]));
 }
 
-function rellenar(config, configurado) {
+function rellenar(config) {
     for (const c of CAMPOS) {
         const input = form.elements[c];
         if (SECRETOS.includes(c)) {
@@ -44,9 +39,9 @@ function rellenar(config, configurado) {
 async function iniciar() {
     const { datos } = await pedir("/api/config");
     $("cargando").hidden = true;
-    $("configuracion").hidden = false;
+    configurado = !!datos.configurado;
 
-    if (datos.configurado) {
+    if (configurado) {
         $("menu").hidden = false;
         $("titulo").textContent = "Configuración";
         $("ayuda").textContent = "Cambia los datos de conexión. Deja la contraseña y el token vacíos para conservar los guardados.";
@@ -56,8 +51,11 @@ async function iniciar() {
             ? "Se encontró ContaPyme en este equipo. Completa los datos y prueba la conexión."
             : "Escribe los datos de conexión de ContaPyme y de Faktur, y prueba la conexión.";
     }
-    rellenar(datos.config, datos.configurado);
+    rellenar(datos.config);
+    navegar();
 }
+
+window.addEventListener("hashchange", navegar);
 
 // Cualquier cambio invalida la prueba anterior.
 form.addEventListener("input", () => {
@@ -66,10 +64,10 @@ form.addEventListener("input", () => {
 
 $("probar").addEventListener("click", async () => {
     $("probar").disabled = true;
-    mostrarMensaje("Probando la conexión…", "secondary");
+    mostrarMensaje("mensaje", "Probando la conexión…", "secondary");
     const { datos } = await pedir("/api/config/probar", { method: "POST", body: leerFormulario() });
     $("probar").disabled = false;
-    mostrarMensaje(datos.mensaje, datos.ok ? "success" : "danger");
+    mostrarMensaje("mensaje", datos.mensaje, datos.ok ? "success" : "danger");
     $("guardar").disabled = !datos.ok;
 });
 
@@ -77,9 +75,9 @@ form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     $("guardar").disabled = true;
     const { datos } = await pedir("/api/config", { method: "PUT", body: leerFormulario() });
-    if (!datos.ok) return mostrarMensaje(datos.mensaje, "danger");
+    if (!datos.ok) return mostrarMensaje("mensaje", datos.mensaje, "danger");
     await iniciar();
-    mostrarMensaje(datos.mensaje, "success");
+    mostrarMensaje("mensaje", datos.mensaje, "success");
 });
 
 iniciar();

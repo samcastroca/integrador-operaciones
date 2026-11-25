@@ -1,4 +1,5 @@
 // facturaLogs.sqlite.mjs
+import moment from "moment-timezone";
 import { db } from "./datos.mjs";
 
 // Creamos la tabla si no existe
@@ -34,7 +35,8 @@ const insertStmt = db.prepare(`
     intento,
     request_body,
     response_body,
-    error_message
+    error_message,
+    created_at
   ) VALUES (
     @operation_id,
     @success,
@@ -42,7 +44,8 @@ const insertStmt = db.prepare(`
     @intento,
     @request_body,
     @response_body,
-    @error_message
+    @error_message,
+    @created_at
   );
 `);
 
@@ -63,8 +66,19 @@ export function guardarLogFactura({
         request_body: requestBody ? JSON.stringify(requestBody) : null,
         response_body: responseBody ? JSON.stringify(responseBody) : null,
         error_message: errorMessage ?? null,
+        created_at: moment().tz("America/Bogota").format(), // ISO 8601 con -05:00
     });
 }
+
+/** De los `operationIds` dados, los que tienen un envío correcto en la bitácora. */
+export function yaEnviadas(operationIds) {
+    const filas = yaEnviadasStmt.all(JSON.stringify(operationIds));
+    return new Set(filas.map((f) => f.operation_id));
+}
+const yaEnviadasStmt = db.prepare(`
+  SELECT DISTINCT operation_id FROM factura_envios_log
+  WHERE success = 1 AND operation_id IN (SELECT value FROM json_each(?))
+`);
 
 // Para consultas desde las rutas
 export function listarLogs({
