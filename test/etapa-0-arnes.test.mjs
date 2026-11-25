@@ -6,7 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { etapa, etapaActual, raiz } from "./ayudas/etapa.mjs";
 import { arrancarServidor, pedir } from "./ayudas/servidor.mjs";
-import { md5Mayus, simularContaPyme } from "./simuladores/contapyme.mjs";
+import { md5, simularContaPyme } from "./simuladores/contapyme.mjs";
 import { simularFaktur } from "./simuladores/faktur.mjs";
 
 const RUTA = (cp, metodo) => `http://${cp.ip}:${cp.puerto}/datasnap/rest/TBasicoGeneral/%22${metodo}%22/`;
@@ -16,7 +16,7 @@ test("0.1 la puerta marca como TODO solo las etapas posteriores a config.etapa",
     assert.ok(etapa(etapaActual + 1).todo);
 });
 
-test("0.2 ContaPyme simulado: login con MD5 en mayúsculas, rechazo y paginación", async () => {
+test("0.2 ContaPyme simulado: login con MD5 en minúsculas, rechazo y paginación", async () => {
     const cp = await simularContaPyme({ facturas: 120 });
     try {
         const login = (password) =>
@@ -24,7 +24,7 @@ test("0.2 ContaPyme simulado: login con MD5 en mayúsculas, rechazo y paginació
                 method: "POST",
                 body: { _parameters: [JSON.stringify({ email: cp.email, password }), "CK", "1001", "0"] },
             });
-        const ok = await login(md5Mayus(cp.contrasena));
+        const ok = await login(md5(cp.contrasena));
         assert.equal(ok.body.result[0].respuesta.datos.keyagente, cp.keyagente);
         const malo = await login(cp.contrasena);
         assert.equal(malo.body.result[0].encabezado.resultado, "false");

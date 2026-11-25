@@ -1,6 +1,6 @@
 // Agente REST DataSnap de ContaPyme simulado, alimentado con fixtures/contapyme/.
-// El formato del login sigue la hipótesis de contexto/tecnologias.md hasta que la subtarea 1.4 lo
-// confirme: primer parámetro como objeto o string JSON, contraseña en MD5 y en mayúsculas.
+// Formato del login confirmado en la subtarea 1.4 contra el agente real (24-nov-2026): primer
+// parámetro como objeto o string JSON y contraseña en MD5 hex en MINÚSCULAS (no mayúsculas).
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { readFileSync } from "node:fs";
@@ -9,7 +9,7 @@ import http from "node:http";
 const fixture = (nombre) =>
     JSON.parse(readFileSync(new URL(`../../fixtures/contapyme/${nombre}.json`, import.meta.url), "utf8"));
 
-export const md5Mayus = (texto) => createHash("md5").update(texto).digest("hex").toUpperCase();
+export const md5 = (texto) => createHash("md5").update(texto).digest("hex");
 
 export const METODOS_LECTURA = ["GetAuth", "GetListaOperaciones", "DoExecuteOprAction:LOAD", "GetInfoTercero"];
 
@@ -21,7 +21,7 @@ const fallo = (mensaje) => ({ result: [{ encabezado: { resultado: "false", mensa
 /**
  * @param {object} opciones
  * @param {string} [opciones.email]
- * @param {string} [opciones.contrasena] contraseña en claro; el agente espera su MD5 en mayúsculas
+ * @param {string} [opciones.contrasena] contraseña en claro; el agente espera su MD5 en minúsculas
  * @param {number} [opciones.facturas] cuántas facturas devuelve la lista (inumoper 1001, 1002…)
  * @param {string[]} [opciones.fechasInvalidas] inumoper cuyo detalle trae una fecha inválida
  * @param {boolean} [opciones.compradorJuridico] el comprador de cada factura es persona jurídica
@@ -51,7 +51,7 @@ export async function simularContaPyme({
         switch (metodo) {
             case "GetAuth": {
                 const cred = typeof p0 === "string" ? JSON.parse(p0) : p0;
-                if (cred?.email === email && cred?.password === md5Mayus(contrasena)) {
+                if (cred?.email === email && cred?.password === md5(contrasena)) {
                     return respuesta({ keyagente });
                 }
                 return fallo("Usuario o contraseña inválidos");
