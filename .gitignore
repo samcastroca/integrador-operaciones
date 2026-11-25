@@ -13,3 +13,6 @@ datos/
 # Contexto para el agente (local, no se versiona)
 CLAUDE.md
 contexto/
+
+# Respuestas reales de ContaPyme/Faktur sin anonimizar (scripts/exploracion)
+capturas/

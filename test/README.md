@@ -36,7 +36,7 @@ Debe responder `GET /health` → `{ ok: true }`.
 
 ### Configuración
 Cuerpo: `{ ip, puerto, email, contrasena, iapp, nit, fakturUrl, fakturToken }`, con `contrasena`
-en claro (el integrador la convierte a MD5 en mayúsculas para el agente).
+en claro (el integrador la convierte a MD5 hex en minúsculas para el agente).
 
 | Ruta | Respuesta |
 |---|---|

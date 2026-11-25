@@ -1,0 +1,40 @@
+{
+  "status": 400,
+  "enviado": {
+    "complete_invoice": true,
+    "operation_id": "PRUEBA-ERR-1795552052825",
+    "operation_type": "V",
+    "operation_issue_date": "fecha-invalida",
+    "operation_expiration_date": "2026-11-24",
+    "currency": "COP",
+    "main_sender": "900999999",
+    "secondary_sender": {
+      "document_type": "C",
+      "document_number": "1010101010",
+      "verification_digit": "0",
+      "person_type": "N",
+      "commercial_name": "PRUEBA INTEGRADOR",
+      "initials": "PRUEBA INTEGRADOR",
+      "statal_entity": false,
+      "consortium": false,
+      "aggregation_code": 3,
+      "city_code": "63001",
+      "country_code": "169",
+      "first_name": "PRUEBA",
+      "last_name": "INTEGRADOR",
+      "secondary_last_name": ""
+    },
+    "total_value": 1000,
+    "end_value": 1000,
+    "delivery_city_code": "63001",
+    "delivery_country_code": "169",
+    "payment_method": 20,
+    "delivery_warehouse": "V",
+    "products": []
+  },
+  "respuesta": {
+    "operation_issue_date": [
+      "Date has wrong format. Use one of these formats instead: YYYY-MM-DD."
+    ]
+  }
+}

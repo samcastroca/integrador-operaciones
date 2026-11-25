@@ -8,7 +8,7 @@ import test from "node:test";
 import { etapa, raiz } from "./ayudas/etapa.mjs";
 import { abrirBase, configPara, montarEscenario, TOKEN_FAKTUR } from "./ayudas/escenario.mjs";
 import { arrancarServidor, pedir, puertoLibre } from "./ayudas/servidor.mjs";
-import { md5Mayus, simularContaPyme } from "./simuladores/contapyme.mjs";
+import { md5, simularContaPyme } from "./simuladores/contapyme.mjs";
 
 const E = etapa(2);
 const OCULTO = "********";
@@ -86,14 +86,14 @@ test("2.6 una contraseña vacía conserva la guardada", E, async () => {
     }
 });
 
-test("2.3 el login envía la contraseña en MD5 y mayúsculas", E, async () => {
+test("2.3 el login envía la contraseña en MD5 (hex en minúsculas)", E, async () => {
     const e = await montarEscenario();
     try {
         const logins = e.cp.peticiones.filter((p) => p.metodo === "GetAuth");
         assert.ok(logins.length > 0, "el integrador no hizo login");
         const cred = logins.at(-1).params[0];
         const { password } = typeof cred === "string" ? JSON.parse(cred) : cred;
-        assert.equal(password, md5Mayus(e.cp.contrasena));
+        assert.equal(password, md5(e.cp.contrasena));
     } finally {
         await e.parar();
     }

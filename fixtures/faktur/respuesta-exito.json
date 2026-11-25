@@ -1,0 +1,72 @@
+{
+  "status": 201,
+  "enviado": {
+    "complete_invoice": true,
+    "operation_id": "PRUEBA-1795552052825",
+    "operation_type": "V",
+    "operation_issue_date": "2026-11-24",
+    "operation_expiration_date": "2026-11-24",
+    "currency": "COP",
+    "main_sender": "900999999",
+    "secondary_sender": {
+      "document_type": "C",
+      "document_number": "1010101010",
+      "verification_digit": "0",
+      "person_type": "N",
+      "commercial_name": "PRUEBA INTEGRADOR",
+      "initials": "PRUEBA INTEGRADOR",
+      "statal_entity": false,
+      "consortium": false,
+      "aggregation_code": 3,
+      "city_code": "63001",
+      "country_code": "169",
+      "first_name": "PRUEBA",
+      "last_name": "INTEGRADOR",
+      "secondary_last_name": ""
+    },
+    "total_value": 1000,
+    "end_value": 1000,
+    "delivery_city_code": "63001",
+    "delivery_country_code": "169",
+    "payment_method": 20,
+    "delivery_warehouse": "V",
+    "products": [
+      {
+        "product": "P998",
+        "quantity": 1,
+        "unitary_price": 1000,
+        "tax": 0,
+        "total_price": 1000
+      }
+    ]
+  },
+  "respuesta": {
+    "success": "the operation has been created",
+    "operation": {
+      "id": null,
+      "operation_id": "PRUEBA-1795552052825",
+      "operation_number": 1,
+      "operation_type": "V",
+      "complete_invoice": true,
+      "certificate": null,
+      "operation_issue_date": "2026-11-24",
+      "operation_filing_date": null,
+      "operation_posting_date": null,
+      "operation_expiration_date": "2026-11-24",
+      "inserted_at": null,
+      "currency": "COP",
+      "main_sender": {
+        "document_type": "A",
+        "document_number": "900999999"
+      },
+      "secondary_sender": null,
+      "total_value": "1000.00000",
+      "end_value": "1000.00000",
+      "delivery_city_code": "63001",
+      "delivery_country_code": "169",
+      "payment_method": 20,
+      "inlineproduct_set": [],
+      "inlineproductnonregistrable_set": []
+    }
+  }
+}
