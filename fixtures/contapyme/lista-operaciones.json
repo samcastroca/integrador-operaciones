@@ -1,30 +1,115 @@
 {
   "result": [
     {
-      "encabezado": { "resultado": "true", "mensaje": "" },
+      "encabezado": {
+        "resultado": "true",
+        "imensaje": "",
+        "mensaje": "",
+        "tiempo": "364",
+        "version": "1.0"
+      },
       "respuesta": {
+        "paginacion": {
+          "totalpaginas": "10932",
+          "totalregistros": "54659"
+        },
         "datos": [
           {
             "itdoper": "ING1",
-            "fcreacion": "11/20/2026",
-            "inumoper": "1001",
-            "tdetalle": "Factura de venta",
-            "ncorto": "FV",
-            "iestado": "2",
-            "ntdsop": "Factura electrónica",
-            "ntercero": "JUAN CARLOS PÉREZ GÓMEZ",
+            "fcreacion": "31/07/2026 10:11:16 a. m.",
+            "inumoper": "832156",
+            "tdetalle": "Matxrk 72-78-7931",
+            "iestado": "1",
             "iprocess": "2",
-            "fsoport": "11/20/2026",
-            "snumsop": "FV-1001",
+            "fsoport": "07/31/2026",
+            "snumsop": "FCO24932",
             "qerror": "0",
             "qwarning": "0",
             "banulada": "F",
-            "mingresos": "119000",
+            "mingresos": "48000",
             "megresos": "0",
-            "mtotaloperacion": "119000"
+            "mtotaloperacion": "76000",
+            "ncorto": "FCO",
+            "ntdsop": "Factura Electronica Contado",
+            "ntercero": "DUHBT XNLX YQAQQGR JUTTW"
+          },
+          {
+            "itdoper": "ING1",
+            "fcreacion": "31/07/2026 10:35:18 a. m.",
+            "inumoper": "832160",
+            "tdetalle": "Matxrk 72-78-7931",
+            "iestado": "1",
+            "iprocess": "2",
+            "fsoport": "07/31/2026",
+            "snumsop": "FCR39837",
+            "qerror": "0",
+            "qwarning": "0",
+            "banulada": "F",
+            "mingresos": "72000",
+            "megresos": "0",
+            "mtotaloperacion": "512000",
+            "ncorto": "FCR",
+            "ntdsop": "Factura Electronica Credito",
+            "ntercero": "WMUEJ WIAYZYL CYPBOB JKFGXYLJRB"
+          },
+          {
+            "itdoper": "ING1",
+            "fcreacion": "31/07/2026 10:39:48 a. m.",
+            "inumoper": "832161",
+            "tdetalle": "XVNVIP RKWA QBC ",
+            "iestado": "1",
+            "iprocess": "2",
+            "fsoport": "07/31/2026",
+            "snumsop": "FCO05169",
+            "qerror": "0",
+            "qwarning": "0",
+            "banulada": "F",
+            "mingresos": "152000",
+            "megresos": "0",
+            "mtotaloperacion": "152000",
+            "ncorto": "FCO",
+            "ntdsop": "Factura Electronica Contado",
+            "ntercero": "LQAIJ VHJOMANC WOVTAC BOOZB"
+          },
+          {
+            "itdoper": "ING1",
+            "fcreacion": "31/07/2026 10:53:35 a. m.",
+            "inumoper": "832163",
+            "tdetalle": "Matxrk 72-78-7931",
+            "iestado": "1",
+            "iprocess": "2",
+            "fsoport": "07/31/2026",
+            "snumsop": "FCO06798",
+            "qerror": "0",
+            "qwarning": "0",
+            "banulada": "F",
+            "mingresos": "239360",
+            "megresos": "0",
+            "mtotaloperacion": "279360",
+            "ncorto": "FCO",
+            "ntdsop": "Factura Electronica Contado",
+            "ntercero": "BRAEYSF MJG UDRWLSN URKZW JDDXME"
+          },
+          {
+            "itdoper": "ING1",
+            "fcreacion": "31/07/2026 11:18:12 a. m.",
+            "inumoper": "832168",
+            "tdetalle": "Matxrk 72-78-7931",
+            "iestado": "1",
+            "iprocess": "2",
+            "fsoport": "07/31/2026",
+            "snumsop": "FCO55087",
+            "qerror": "0",
+            "qwarning": "0",
+            "banulada": "F",
+            "mingresos": "88000",
+            "megresos": "0",
+            "mtotaloperacion": "88000",
+            "ncorto": "FCO",
+            "ntdsop": "Factura Electronica Contado",
+            "ntercero": "AOPJWA BTMFZ FBHOBTTGO THHXVUT"
           }
-        ],
-        "paginacion": { "pagina": "1", "totalpaginas": "1", "totalregistros": "1" }
+        ]
       }
     }
   ]
