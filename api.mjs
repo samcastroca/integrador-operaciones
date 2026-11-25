@@ -462,9 +462,28 @@ function motivoFaktur(err, intentos) {
     const veces = intentos > 1 ? ` (se intentó ${intentos} veces)` : "";
     if (!status) return `No se pudo conectar con Faktur${veces}. Revisa la conexión a internet y la URL de Faktur.`;
     if (status === 401 || status === 403) return "Faktur rechazó el token. Revisa el token en la configuración.";
+    if (status === 404 || status === 405) return "La URL de Faktur no es correcta. Revísala en la configuración.";
     if (status >= 500 || status === 429) return `Faktur no está disponible en este momento${veces}.`;
     const detalle = resumirErrores(err.response.data).join("; ").slice(0, 500);
     return `Faktur rechazó la factura${detalle ? `: ${detalle}` : "."}`;
+}
+
+/**
+ * Prueba de conexión con Faktur sin crear nada: `OPTIONS` a la URL de operaciones con el token
+ * (Django REST Framework autentica también en OPTIONS).
+ * @returns {Promise<{ok: boolean, mensaje: string}>}
+ */
+export async function probarFaktur(cfg) {
+    try {
+        await axios.options(cfg.fakturUrl, { headers: { Authorization: `Token ${cfg.fakturToken}` }, timeout: 10000 });
+        return { ok: true, mensaje: "Conexión correcta con Faktur." };
+    } catch (err) {
+        const status = err.response?.status;
+        if (!status) return { ok: false, mensaje: `No se pudo conectar con Faktur en ${cfg.fakturUrl}. Revisa la conexión a internet y la URL.` };
+        if (status === 401 || status === 403) return { ok: false, mensaje: "Faktur rechazó el token. Revisa el token en la configuración." };
+        if (status === 404 || status === 405) return { ok: false, mensaje: "La URL de Faktur no es correcta. Revísala en la configuración." };
+        return { ok: false, mensaje: "Faktur no está disponible en este momento." };
+    }
 }
 
 /**

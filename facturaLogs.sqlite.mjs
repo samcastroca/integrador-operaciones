@@ -101,17 +101,19 @@ export function listarLogs({
     }
 
     const offset = (page - 1) * pageSize;
+    const filtro = where.length ? "WHERE " + where.join(" AND ") : "";
 
     const sql = `
     SELECT *
     FROM factura_envios_log
-    ${where.length ? "WHERE " + where.join(" AND ") : ""}
+    ${filtro}
     ORDER BY id DESC
     LIMIT ? OFFSET ?
   `;
 
-    const stmt = db.prepare(sql);
-    return stmt.all(...params, pageSize, offset);
+    const data = db.prepare(sql).all(...params, pageSize, offset);
+    const { total } = db.prepare(`SELECT COUNT(*) AS total FROM factura_envios_log ${filtro}`).get(...params);
+    return { data, total };
 }
 
 export function obtenerLogPorId(id) {

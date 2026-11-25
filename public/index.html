@@ -13,6 +13,8 @@
       <span class="navbar-brand">Integrador Faktur</span>
       <ul class="navbar-nav" id="menu" hidden>
         <li class="nav-item"><a class="nav-link" href="#enviar">Enviar facturas</a></li>
+        <li class="nav-item"><a class="nav-link" href="#historial">Historial</a></li>
+        <li class="nav-item"><a class="nav-link" href="#estado">Estado de la conexión</a></li>
         <li class="nav-item"><a class="nav-link" href="#configuracion">Configuración</a></li>
       </ul>
     </div>
@@ -43,20 +45,24 @@
           <div class="col-sm-4" id="modo-dia">
             <label class="form-label" for="fecha">Fecha</label>
             <input class="form-control" id="fecha" type="date">
+            <div class="invalid-feedback" id="error-fecha"></div>
           </div>
           <div class="col-sm-8 row g-3" id="modo-rango" hidden>
             <div class="col-6">
               <label class="form-label" for="desde">Desde</label>
               <input class="form-control" id="desde" type="date">
+              <div class="invalid-feedback" id="error-desde"></div>
             </div>
             <div class="col-6">
               <label class="form-label" for="hasta">Hasta</label>
               <input class="form-control" id="hasta" type="date">
+              <div class="invalid-feedback" id="error-hasta"></div>
             </div>
           </div>
           <div class="col-sm-8" id="modo-numeros" hidden>
             <label class="form-label" for="numeros">Números (separados por comas o espacios)</label>
             <input class="form-control" id="numeros" placeholder="FCO24932, FCR1050">
+            <div class="invalid-feedback" id="error-numeros"></div>
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-primary" id="consultar">Consultar</button>
@@ -91,6 +97,70 @@
           <tbody></tbody>
         </table>
         <button type="button" class="btn btn-outline-primary" id="reintentar" hidden>Reintentar las fallidas</button>
+      </div>
+    </section>
+
+    <section id="historial" hidden>
+      <h1 class="h3">Historial</h1>
+      <form id="form-historial" class="row g-3 align-items-end mb-3" novalidate>
+        <div class="col-sm-5">
+          <label class="form-label" for="h-factura">Número de factura</label>
+          <input class="form-control" id="h-factura" placeholder="Todas">
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label" for="h-resultado">Resultado</label>
+          <select class="form-select" id="h-resultado">
+            <option value="">Todos</option>
+            <option value="1">Enviadas</option>
+            <option value="0">Fallidas</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Filtrar</button>
+        </div>
+      </form>
+
+      <div id="mensaje-historial" class="alert" role="status" hidden></div>
+
+      <div class="table-responsive bg-body border rounded mb-3">
+        <table class="table table-sm table-hover align-middle mb-0" id="tabla-historial">
+          <thead>
+            <tr><th>Fecha</th><th>Factura</th><th>Resultado</th><th>Intentos</th><th>Motivo</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="h-anterior">Anterior</button>
+        <span id="h-pagina" class="text-secondary small"></span>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="h-siguiente">Siguiente</button>
+      </div>
+    </section>
+
+    <section id="estado" hidden>
+      <h1 class="h3">Estado de la conexión</h1>
+      <p class="text-secondary">Prueba que el integrador llega a ContaPyme y a Faktur con los datos guardados.</p>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h2 class="h5 card-title">ContaPyme</h2>
+              <p class="card-text font-monospace text-break" id="destino-contapyme"></p>
+              <button type="button" class="btn btn-outline-primary" id="probar-contapyme">Probar ContaPyme</button>
+              <div class="alert mt-3 mb-0" id="mensaje-contapyme" role="status" hidden></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <h2 class="h5 card-title">Faktur</h2>
+              <p class="card-text font-monospace text-break" id="destino-faktur"></p>
+              <button type="button" class="btn btn-outline-primary" id="probar-faktur">Probar Faktur</button>
+              <div class="alert mt-3 mb-0" id="mensaje-faktur" role="status" hidden></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -155,6 +225,25 @@
     </section>
   </main>
 
+  <div class="modal fade" id="modal-detalle" tabindex="-1" aria-labelledby="titulo-detalle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-detalle">Detalle del envío</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="resumen-detalle"></p>
+          <h3 class="h6">Lo enviado a Faktur</h3>
+          <pre class="bg-light border rounded p-2 small" id="enviado-detalle"></pre>
+          <h3 class="h6">Respuesta de Faktur</h3>
+          <pre class="bg-light border rounded p-2 small" id="respuesta-detalle"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="/app.js" type="module"></script>
 </body>
 </html>

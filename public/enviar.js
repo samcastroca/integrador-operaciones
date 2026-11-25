@@ -20,11 +20,41 @@ function mostrarModo() {
     for (const m of ["dia", "rango", "numeros"]) $(`modo-${m}`).hidden = m !== modo;
 }
 
+// Mismas reglas que filtro.mjs en el servidor (subtarea 4.3).
+const NUMERO = /^[A-Za-z0-9-]{1,30}$/;
+const MAX_NUMEROS = 200;
+const CAMPOS_CONSULTA = ["fecha", "desde", "hasta", "numeros"];
+
+/** Marca el campo `id` como inválido con `texto`, o lo limpia si `texto` es vacío. */
+function marcar(id, texto) {
+    $(id).classList.toggle("is-invalid", !!texto);
+    $(`error-${id}`).textContent = texto;
+    return !texto;
+}
+
+/** La consulta del formulario, o `null` si algo no es válido (los campos quedan marcados). */
 function leerConsulta() {
+    for (const id of CAMPOS_CONSULTA) marcar(id, "");
     const modo = form.elements.modo.value;
-    if (modo === "dia") return { modo, fecha: $("fecha").value };
-    if (modo === "rango") return { modo, desde: $("desde").value, hasta: $("hasta").value };
-    return { modo, numeros: $("numeros").value.split(/[\s,;]+/).filter(Boolean) };
+    // El selector de fecha deja `value` vacío si la fecha escrita no existe (p. ej. 31/02).
+    if (modo === "dia") {
+        return marcar("fecha", $("fecha").value ? "" : "Elige una fecha válida.") ? { modo, fecha: $("fecha").value } : null;
+    }
+    if (modo === "rango") {
+        const desde = $("desde").value;
+        const hasta = $("hasta").value;
+        let ok = marcar("desde", desde ? "" : "Elige la fecha inicial.");
+        ok = marcar("hasta", hasta ? "" : "Elige la fecha final.") && ok;
+        if (ok && desde > hasta) ok = marcar("hasta", "Debe ser igual o posterior a la fecha inicial.");
+        return ok ? { modo, desde, hasta } : null;
+    }
+    const numeros = $("numeros").value.split(/[\s,;]+/).filter(Boolean);
+    const malo = numeros.find((n) => !NUMERO.test(n));
+    const error = !numeros.length ? "Escribe al menos un número de factura."
+        : malo !== undefined ? `"${malo}" no es un número válido: solo letras, números y guiones.`
+            : numeros.length > MAX_NUMEROS ? `Se pueden consultar hasta ${MAX_NUMEROS} números a la vez.`
+                : "";
+    return marcar("numeros", error) ? { modo, numeros } : null;
 }
 
 function seleccionadas() {
@@ -70,11 +100,13 @@ form.elements.modo.forEach((r) => r.addEventListener("change", mostrarModo));
 form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     if (enviando) return;
+    const consulta = leerConsulta();
+    if (!consulta) return;
     $("consultar").disabled = true;
     $("lista").hidden = true;
     $("progreso").hidden = true;
     mostrarMensaje("mensaje-envio", "Consultando ContaPyme…", "secondary");
-    const { status, datos } = await pedir("/api/facturas/consultar", { method: "POST", body: leerConsulta() });
+    const { status, datos } = await pedir("/api/facturas/consultar", { method: "POST", body: consulta });
     $("consultar").disabled = false;
     if (status !== 200) return mostrarMensaje("mensaje-envio", datos.mensaje, "danger");
     facturas = datos.facturas;

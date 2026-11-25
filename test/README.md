@@ -50,18 +50,20 @@ en claro (el integrador la convierte a MD5 hex en minúsculas para el agente).
 | Ruta | Cuerpo / respuesta |
 |---|---|
 | `POST /api/facturas/consultar` | `{ modo: "dia", fecha: "AAAA-MM-DD" }`, `{ modo: "rango", desde, hasta }` o `{ modo: "numeros", numeros: ["FV-1001"] }` → `{ facturas: [{ inumoper, snumsop, fecha, tercero, total, yaEnviada }] }`; 400 `{ mensaje }` si no es válido |
-| `POST /api/envios` | `{ facturas: ["<inumoper>"] }` → `{ id }` al instante; el envío sigue en segundo plano |
-| `GET /api/envios/:id` | `{ procesadas, total, resultados: [{ snumsop, ok, motivo }] }` |
-| `POST /api/envios/:id/reintentar` | reenvía solo las fallidas (puede devolver un `id` nuevo) |
+| `POST /api/envios` | `{ facturas: ["<inumoper>"] }` → `{ id }` al instante; el envío sigue en segundo plano. 409 si alguna ya está en un envío en curso |
+| `GET /api/envios/:id` | `{ id, procesadas, total, terminado, resultados: [{ inumoper, snumsop, ok, motivo }] }` |
+| `POST /api/envios/:id/reintentar` | crea un envío nuevo solo con las fallidas → `{ id }`; 409 si el envío sigue en curso o ya se reintentó |
 
 En la bitácora (`factura_envios_log`), `intento` es el número real de intentos y `created_at` va en
 ISO 8601 con desfase `-05:00`.
 
 ### Estado e historial
-- `GET /api/estado` muestra los destinos de ContaPyme (ip:puerto) y de Faktur (URL).
-- `POST /api/estado/probar/contapyme` y `POST /api/estado/probar/faktur` → `{ ok, mensaje }`.
-- `GET /logs/facturas?operation_id=&success=&page=&pageSize=` (`pageSize` acotado a 1–200) y
-  `GET /logs/facturas/:id`.
+- `GET /api/estado` → `{ configurado, contapyme: "ip:puerto", faktur: "<URL>" }`.
+- `POST /api/estado/probar/contapyme` y `POST /api/estado/probar/faktur` → `{ ok, mensaje }`. La de
+  Faktur hace un `OPTIONS` a la URL de operaciones con el token: no crea ni lista nada.
+- `GET /logs/facturas?operation_id=&success=&page=&pageSize=` → `{ ok, page, pageSize, count, data }`,
+  con `pageSize` acotado a 1–200 y `count` = total de registros que cumplen el filtro; y
+  `GET /logs/facturas/:id` → `{ ok, data }`.
 
 Todo error se devuelve como `{ ok: false, mensaje }` en lenguaje del usuario, sin `ECONNREFUSED`,
 stack ni jerga de HTTP.
