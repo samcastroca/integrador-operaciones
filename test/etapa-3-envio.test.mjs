@@ -23,12 +23,13 @@ test("3.1 el filtro rechaza entradas inválidas o con SQL (400)", E, async () =>
             { modo: "sql", sql: "1=1" },
             {},
         ];
+        const antes = e.cp.peticiones.length; // la prueba de conexión de PUT /api/config ya consultó (2.5)
         for (const cuerpo of invalidas) {
             const r = await consultar(e.url, cuerpo);
             assert.equal(r.status, 400, `debió rechazar ${JSON.stringify(cuerpo)}`);
             assert.ok(r.body.mensaje);
         }
-        const listas = e.cp.peticiones.filter((p) => p.metodo === "GetListaOperaciones");
+        const listas = e.cp.peticiones.slice(antes).filter((p) => p.metodo === "GetListaOperaciones");
         assert.equal(listas.length, 0, "una entrada inválida llegó a ContaPyme");
     } finally {
         await e.parar();

@@ -4,7 +4,7 @@
   "description": "",
   "main": "importador_facturas_manual.mjs",
   "config": {
-    "etapa": 2
+    "etapa": 3
   },
   "scripts": {
     "manual": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_manual.mjs",
