@@ -211,9 +211,10 @@ export async function armarPayload(cfg, keyagente, datos) {
     const aggregation_code = 3;
     const city_code = `${infoBasicaTerceroComprador.idep ?? ""}${infoBasicaTerceroComprador.imun ?? ""}`.trim();
     const country_code = `${infoBasicaTerceroComprador.ipais ?? ""}`.trim();
-    const first_name = infoBasicaTerceroComprador.ntercero ?? "";
-    const last_name = infoBasicaTerceroComprador.napellido.split(" ")[0] ?? "";
-    const secondary_last_name = infoBasicaTerceroComprador.napellido.split(" ")[1] ?? "";
+    const first_name = `${infoBasicaTerceroComprador.ntercero ?? ""}`.trim();
+    // ContaPyme guarda los dos apellidos en `napellido`, a veces con espacios de más (" Pérez  Gómez"):
+    // sin recortar, el primer apellido quedaba vacío y Faktur rechaza un last_name vacío.
+    const [last_name = "", secondary_last_name = ""] = `${infoBasicaTerceroComprador.napellido ?? ""}`.trim().split(/\s+/);
 
     // -- OJO: valida la lógica. Ahora mismo tu código siempre ponía "V".
     const operation_type = encabezado.itdoper === "ING1" ? "V" : "C"; // <-- Ajusta según regla real

@@ -25,6 +25,7 @@ const fallo = (mensaje) => ({ result: [{ encabezado: { resultado: "false", mensa
  * @param {number} [opciones.facturas] cuántas facturas devuelve la lista (inumoper 1001, 1002…)
  * @param {string[]} [opciones.fechasInvalidas] inumoper cuyo detalle trae una fecha inválida
  * @param {boolean} [opciones.compradorJuridico] el comprador de cada factura es persona jurídica
+ * @param {string} [opciones.napellido] sustituye el `napellido` del tercero natural (p. ej. con espacios de más)
  */
 export async function simularContaPyme({
     email = "pruebas@empresa.test",
@@ -32,6 +33,7 @@ export async function simularContaPyme({
     facturas = 3,
     fechasInvalidas = [],
     compradorJuridico = false,
+    napellido,
 } = {}) {
     const lista = fixture("lista-operaciones");
     const detalle = fixture("detalle-factura");
@@ -85,6 +87,7 @@ export async function simularContaPyme({
                 const base = String(p0?.init ?? "").startsWith("9") ? juridica : natural;
                 const datos = structuredClone(base.result[0].respuesta.datos);
                 datos.infobasica.init = String(p0?.init ?? "");
+                if (napellido !== undefined && base === natural) datos.infobasica.napellido = napellido;
                 return respuesta(datos);
             }
             default:
