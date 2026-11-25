@@ -2,7 +2,6 @@
 import axios from "axios";
 import moment from 'moment-timezone';
 import logger from "./logger.mjs";
-import { guardarLogFactura } from "./facturaLogs.sqlite.mjs";
 
 /**
  * Función auxiliar para enviar POST
@@ -130,162 +129,184 @@ export async function obtenerFacturasPorPlazo(cfg, keyagente, { pagina = "1", sq
 }
 
 
-export async function ProcesarDatos(loteFacturas, cfg, keyagente) {
+/**
+ * Todas las facturas ING1 que cumplen `sql` (de `construirFiltro`), recorriendo todas las páginas.
+ * @returns {Promise<Array<{inumoper, snumsop, fecha, tercero, total}>>}
+ */
+export async function consultarFacturas(cfg, keyagente, sql) {
+    const facturas = [];
+    let totalPaginas = 1;
+    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+        const r = exigirResultado(await obtenerFacturasPorPlazo(cfg, keyagente, { pagina: String(pagina), sql }));
+        totalPaginas = Number(r?.paginacion?.totalpaginas) || 0;
+        for (const o of Array.isArray(r?.datos) ? r.datos : []) {
+            const fecha = moment(o.fsoport, "MM/DD/YYYY", true);
+            facturas.push({
+                inumoper: String(o.inumoper),
+                snumsop: String(o.snumsop ?? "").trim(),
+                fecha: fecha.isValid() ? fecha.format("YYYY-MM-DD") : o.fsoport,
+                tercero: o.ntercero ?? "",
+                total: Number(o.mtotaloperacion) || 0,
+            });
+        }
+    }
+    return facturas;
+}
 
+/** Detalle de una factura (`DoExecuteOprAction` LOAD). Lanza el `mensaje` del agente si falla. */
+export async function cargarFactura(cfg, keyagente, inumoper, itdoper = "ING1") {
+    return exigirResultado(await obtenerDetalleFactura(cfg, keyagente, inumoper, itdoper)).datos;
+}
 
+/**
+ * Convierte el detalle de una factura (de `cargarFactura`) en el payload de Faktur.
+ * Lanza un error con el motivo si los datos no sirven.
+ */
+export async function armarPayload(cfg, keyagente, datos) {
     const currency = "COP";
     const nit = cfg.nit;
     const main_sender = nit;
-    let consolidado = [];
 
+    const tercero = await obtenerTercero(cfg, keyagente, nit);
 
+    // Accesos seguros con optional chaining
+    const encabezado = datos?.encabezado ?? {};
+    const datosprincipales = datos?.datosprincipales ?? {};
+    const listaProductos = datos?.listaproductos ?? [];
+    const infoBasicaTercero = tercero?.result?.[0]?.respuesta?.datos?.infobasica ?? {};
+    const formaCobro = datos?.formacobro?.fcobrocxc ?? {};
 
-    for (let index = 0; index < loteFacturas.length; index++) {
+    let payment_method = 20;
+    let qdiascxc = 0;
 
-        const inumoper_operaciones = loteFacturas[index].inumoper;
-        const itdoper_operaciones = loteFacturas[index].itdoper;
+    if (formaCobro.length > 0) {
 
-        const tercero = await obtenerTercero(cfg, keyagente, nit);
-        const detalleFactura = await obtenerDetalleFactura(cfg, keyagente, inumoper_operaciones, itdoper_operaciones);
+        //qdiascxc = formaCobro[0].qdiascxc;
+        qdiascxc = 0;
+        //console.log(qdiascxc);            
+        payment_method = await calcularRango(parseInt(qdiascxc));
 
-
-        // Accesos seguros con optional chaining
-        const encabezado = detalleFactura?.result?.[0]?.respuesta?.datos?.encabezado ?? {};
-        const datosprincipales = detalleFactura?.result?.[0]?.respuesta?.datos?.datosprincipales ?? {};
-        const listaProductos = detalleFactura?.result?.[0]?.respuesta?.datos?.listaproductos ?? [];
-        const infoBasicaTercero = tercero?.result?.[0]?.respuesta?.datos?.infobasica ?? {};
-        const formaCobro = detalleFactura?.result?.[0]?.respuesta?.datos?.formacobro?.fcobrocxc ?? {};
-
-        let payment_method = 20;
-        let qdiascxc = 0;
-
-        if (formaCobro.length > 0) {
-
-            //qdiascxc = formaCobro[0].qdiascxc;
-            qdiascxc = 0;
-            //console.log(qdiascxc);            
-            payment_method = await calcularRango(parseInt(qdiascxc));
-
-            console.log("metodo de pago");
-            console.log(payment_method);
-        }
-
-
-        const nitComprador = datosprincipales.init;
-
-        const terceroComprador = await obtenerTercero(cfg, keyagente, nitComprador);
-
-        const infoBasicaTerceroComprador = terceroComprador?.result?.[0]?.respuesta?.datos?.infobasica ?? {};
-
-        const document_type = infoBasicaTerceroComprador.itddocum == '31' ? "A" : "C";
-        const document_number = infoBasicaTerceroComprador.init ?? "";
-        const verification_digit = infoBasicaTerceroComprador.idigchequeo ?? "";
-        const person_type = infoBasicaTerceroComprador.bempresa == 'T' ? "J" : "N";
-        const social_reason = infoBasicaTerceroComprador.ntercero ?? "";
-        const commercial_name = infoBasicaTerceroComprador.ntercero ?? "";
-        const initials = infoBasicaTerceroComprador.ntercero ?? "";
-        const statal_entity = infoBasicaTerceroComprador.sclasiflegal.includes("EE;");
-        const consortium = infoBasicaTerceroComprador.sclasiflegal.includes("CN;");
-        const aggregation_code = 3;
-        const city_code = `${infoBasicaTerceroComprador.idep ?? ""}${infoBasicaTerceroComprador.imun ?? ""}`.trim();
-        const country_code = `${infoBasicaTerceroComprador.ipais ?? ""}`.trim();
-        const first_name = infoBasicaTerceroComprador.ntercero ?? "";
-        const last_name = infoBasicaTerceroComprador.napellido.split(" ")[0] ?? "";
-        const secondary_last_name = infoBasicaTerceroComprador.napellido.split(" ")[1] ?? "";
-
-        // -- OJO: valida la lógica. Ahora mismo tu código siempre ponía "V".
-        const operation_type = encabezado.itdoper === "ING1" ? "V" : "C"; // <-- Ajusta según regla real
-        const delivery_warehouse = encabezado.itdoper === "ING1" ? "V" : "C"; // <-- Ajusta según corresponda
-
-        // Fechas
-        const issueDateRaw = encabezado.fsoport;
-        const issueDate = moment(issueDateRaw, "MM/DD/YYYY", true);
-        const fsoport = issueDate.isValid()
-            ? issueDate.format("YYYY-MM-DD")
-            : (() => {
-                throw new Error(`Fecha inválida en fsoport: "${issueDateRaw}"`);
-            })();
-
-        const createDate = encabezado.fcreacion;
-        const createDateCovert = moment(createDate, "MM/DD/YYYY", true);
-        const fechaMasQdias = createDateCovert.clone().add(parseInt(qdiascxc), 'days');
-        const operation_expiration_date = fechaMasQdias.isValid()
-            ? fechaMasQdias.format("YYYY-MM-DD")
-            : (() => {
-                throw new Error(`Fecha inválida en fcreacion: "${createDate}"`);
-            })();
-
-        // Códigos de envío
-        const delivery_city_code = `${infoBasicaTercero.idep ?? ""}${infoBasicaTercero.imun ?? ""}`.trim();
-        const delivery_country_code = `${infoBasicaTercero.ipais ?? ""}`.trim();
-
-
-        // Validaciones mínimas (puedes usar zod/joi si quieres algo formal)
-        if (!encabezado.snumsop || !encabezado.fsoport) {
-            // decide si saltas o lanzas error
-            throw new Error(`Encabezado incompleto para operación ${inumoper}`);
-        }
-
-        const operation_id = `${encabezado.snumsop ?? ""}`.trim();
-        const total_value = Number(encabezado.mtotaloperacion) || 0;
-        const end_value = Number(encabezado.mtotaloperacion) || 0;
-
-
-        // Productos
-        const products = listaProductos.map((p) => ({
-            product: p?.irecurso ?? "",
-            quantity: Number(p?.qproducto) || 0,
-            unitary_price: Number(p?.mprecio) || 0,
-            tax: (Number(p?.qporciva) || 0) / 100,
-            total_price: Number(p?.mvrtotal) || 0,
-        }));
-
-
-        const payloadFaktur = {
-            complete_invoice: true,
-            operation_id,                          // snumsop + fsoport
-            operation_type,                        // según regla
-            operation_issue_date: fsoport,         // YYYY-MM-DD
-            operation_expiration_date,    // mismo día (valida esto)
-            currency,                              // constante (COP)
-            main_sender,                           // NIT
-            // Si realmente necesitas secondary_sender fijo, déjalo,
-            // pero idealmente viene de config o de datos de negocio:
-            secondary_sender: {
-                document_type,
-                document_number,
-                verification_digit,
-                person_type,
-                commercial_name,
-                initials,
-                statal_entity,
-                consortium,
-                aggregation_code,
-                city_code,
-                country_code,
-            },
-            total_value,                           // enc.mtotaloperacion
-            end_value,                             // enc.mtotaloperacion
-            delivery_city_code,                    // tercero.idep + tercero.imun (revisar formato)
-            delivery_country_code,                 // tercero.ipais
-            payment_method,                     // fija (considera parametrizar)
-            delivery_warehouse,                    // según regla
-            products,
-        };
-
-        if (payloadFaktur.secondary_sender.person_type === 'J') {
-            payloadFaktur.secondary_sender.social_reason = social_reason;
-        }
-        else {
-            payloadFaktur.secondary_sender.first_name = first_name;
-            payloadFaktur.secondary_sender.last_name = last_name;
-            payloadFaktur.secondary_sender.secondary_last_name = secondary_last_name;
-        }
-
-        consolidado.push(payloadFaktur);
+        console.log("metodo de pago");
+        console.log(payment_method);
     }
 
-    return consolidado;
+
+    const nitComprador = datosprincipales.init;
+
+    const terceroComprador = await obtenerTercero(cfg, keyagente, nitComprador);
+
+    const infoBasicaTerceroComprador = terceroComprador?.result?.[0]?.respuesta?.datos?.infobasica ?? {};
+
+    const document_type = infoBasicaTerceroComprador.itddocum == '31' ? "A" : "C";
+    const document_number = infoBasicaTerceroComprador.init ?? "";
+    // PROVISIONAL (3.11, por confirmar en 6.4): Faktur rechaza el dígito vacío; las operaciones ya
+    // guardadas en Faktur traen "0".
+    const verification_digit = infoBasicaTerceroComprador.idigchequeo || "0";
+    const person_type = infoBasicaTerceroComprador.bempresa == 'T' ? "J" : "N";
+    const social_reason = infoBasicaTerceroComprador.ntercero ?? "";
+    const commercial_name = infoBasicaTerceroComprador.ntercero ?? "";
+    const initials = infoBasicaTerceroComprador.ntercero ?? "";
+    const statal_entity = infoBasicaTerceroComprador.sclasiflegal.includes("EE;");
+    const consortium = infoBasicaTerceroComprador.sclasiflegal.includes("CN;");
+    const aggregation_code = 3;
+    const city_code = `${infoBasicaTerceroComprador.idep ?? ""}${infoBasicaTerceroComprador.imun ?? ""}`.trim();
+    const country_code = `${infoBasicaTerceroComprador.ipais ?? ""}`.trim();
+    const first_name = infoBasicaTerceroComprador.ntercero ?? "";
+    const last_name = infoBasicaTerceroComprador.napellido.split(" ")[0] ?? "";
+    const secondary_last_name = infoBasicaTerceroComprador.napellido.split(" ")[1] ?? "";
+
+    // -- OJO: valida la lógica. Ahora mismo tu código siempre ponía "V".
+    const operation_type = encabezado.itdoper === "ING1" ? "V" : "C"; // <-- Ajusta según regla real
+    const delivery_warehouse = encabezado.itdoper === "ING1" ? "V" : "C"; // <-- Ajusta según corresponda
+
+    // Fechas
+    const issueDateRaw = encabezado.fsoport;
+    const issueDate = moment(issueDateRaw, "MM/DD/YYYY", true);
+    const fsoport = issueDate.isValid()
+        ? issueDate.format("YYYY-MM-DD")
+        : (() => {
+            throw new Error(`Fecha inválida en fsoport: "${issueDateRaw}"`);
+        })();
+
+    const createDate = encabezado.fcreacion;
+    const createDateCovert = moment(createDate, "MM/DD/YYYY", true);
+    const fechaMasQdias = createDateCovert.clone().add(parseInt(qdiascxc), 'days');
+    const operation_expiration_date = fechaMasQdias.isValid()
+        ? fechaMasQdias.format("YYYY-MM-DD")
+        : (() => {
+            throw new Error(`Fecha inválida en fcreacion: "${createDate}"`);
+        })();
+
+    // Códigos de envío
+    // PROVISIONAL (3.11, por confirmar en la etapa 6): si el NIT emisor no está como tercero en
+    // ContaPyme, la ciudad y el país de entrega se toman del comprador.
+    const delivery_city_code = `${infoBasicaTercero.idep ?? ""}${infoBasicaTercero.imun ?? ""}`.trim() || city_code;
+    const delivery_country_code = `${infoBasicaTercero.ipais ?? ""}`.trim() || country_code;
+
+
+    // Validaciones mínimas (puedes usar zod/joi si quieres algo formal)
+    if (!encabezado.snumsop || !encabezado.fsoport) {
+        // decide si saltas o lanzas error
+        throw new Error(`Encabezado incompleto para operación ${encabezado.inumoper}`);
+    }
+
+    const operation_id = `${encabezado.snumsop ?? ""}`.trim();
+    const total_value = Number(encabezado.mtotaloperacion) || 0;
+    const end_value = Number(encabezado.mtotaloperacion) || 0;
+
+
+    // Productos
+    const products = listaProductos.map((p) => ({
+        product: p?.irecurso ?? "",
+        quantity: Number(p?.qproducto) || 0,
+        unitary_price: Number(p?.mprecio) || 0,
+        tax: (Number(p?.qporciva) || 0) / 100,
+        total_price: Number(p?.mvrtotal) || 0,
+    }));
+
+
+    const payloadFaktur = {
+        complete_invoice: true,
+        operation_id,                          // snumsop + fsoport
+        operation_type,                        // según regla
+        operation_issue_date: fsoport,         // YYYY-MM-DD
+        operation_expiration_date,    // mismo día (valida esto)
+        currency,                              // constante (COP)
+        main_sender,                           // NIT
+        // Si realmente necesitas secondary_sender fijo, déjalo,
+        // pero idealmente viene de config o de datos de negocio:
+        secondary_sender: {
+            document_type,
+            document_number,
+            verification_digit,
+            person_type,
+            commercial_name,
+            initials,
+            statal_entity,
+            consortium,
+            aggregation_code,
+            city_code,
+            country_code,
+        },
+        total_value,                           // enc.mtotaloperacion
+        end_value,                             // enc.mtotaloperacion
+        delivery_city_code,                    // tercero.idep + tercero.imun (revisar formato)
+        delivery_country_code,                 // tercero.ipais
+        payment_method,                     // fija (considera parametrizar)
+        delivery_warehouse,                    // según regla
+        products,
+    };
+
+    if (payloadFaktur.secondary_sender.person_type === 'J') {
+        payloadFaktur.secondary_sender.social_reason = social_reason;
+    }
+    else {
+        payloadFaktur.secondary_sender.first_name = first_name;
+        payloadFaktur.secondary_sender.last_name = last_name;
+        payloadFaktur.secondary_sender.secondary_last_name = secondary_last_name;
+    }
+
+    return payloadFaktur;
 }
 
 
@@ -347,29 +368,6 @@ async function obtenerTercero(cfg, keyagente, nit) {
     }
 }
 
-
-export async function enviarFacturasProcesadas(cfg, keyagente, tipos, sql) {
-    const paginasFacturas = await obtenerFacturasPorPlazo(cfg, keyagente, { pagina: "1", sql, tipos });
-
-    const paginas = paginasFacturas?.result[0]?.respuesta?.paginacion?.totalpaginas ?? false;
-
-
-    if (!paginas) {
-        console.log("NO HAY FACTURAS PARA ACTUALIZAR");
-        return;
-    }
-
-    for (let index = 1; index <= paginas; index++) {
-        const loteFacturas = await obtenerFacturasPorPlazo(cfg, keyagente, { pagina: index, sql, tipos });
-        const procesados = await ProcesarDatos(loteFacturas.result[0].respuesta.datos, cfg, keyagente);
-
-        console.log(JSON.stringify(procesados));
-
-        await enviarFacturasFaktur(procesados, cfg);
-
-
-    }
-}
 
 /** Pequeña utilidad para esperar ms */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -450,87 +448,53 @@ async function crearFactura(data, cfg, { timeoutMs = 15000 } = {}) {
     return axios.post(apiUrl, data, config);
 }
 
-/**
- * Envío en paralelo con reintentos individuales por factura.
- * Limita logs y muestra un resumen final.
- */
-async function enviarFacturasFaktur(procesados, cfg) {
-    const intentos = 3; // intentos configurados en conReintentos
-
-    const tareas = procesados.map((data, idx) =>
-        conReintentos(
-            () => crearFactura(data, cfg),
-            {
-                intentos,
-                baseMs: 600,
-                maxMs: 10000,
-                factor: 2,
-                onRetry: ({ intento, intentosTotales, delay, status, mensaje }) => {
-                    console.warn(
-                        `[Item ${idx}] Reintento ${intento}/${intentosTotales} en ${delay} ms. ` +
-                        `status=${status ?? "NET"}, msg=${mensaje}`
-                    );
-                },
-            }
-        )
-    );
-
-    const resultadoEnvio = await Promise.allSettled(tareas);
-
-    // IMPORTANTE: necesitamos await, así que usamos for..of
-    for (let i = 0; i < resultadoEnvio.length; i++) {
-        const result = resultadoEnvio[i];
-        const data = procesados[i];
-        const operationId = data.operation_id; // viene del payloadFaktur
-
-        if (result.status === "fulfilled") {
-            const res = result.value; // AxiosResponse
-            const httpStatus = res?.status ?? null;
-            const responseBody = res?.data;
-
-            // Guardamos en SQLite
-            guardarLogFactura({
-                operationId,
-                success: true,
-                httpStatus,
-                intento: intentos,   // número de intentos configurado (si quieres algo más fino luego lo cambiamos)
-                requestBody: data,
-                responseBody,
-                errorMessage: null,
-            });
-
-            // Si quieres, puedes seguir logueando por consola/Winston:
-            // logger.info("Factura enviada OK", { item: i, status: httpStatus, operationId });
-        } else {
-            const err = result.reason;
-            const httpStatus = err?.response?.status ?? null;
-            const responseBody = err?.response?.data ?? null;
-            const errorMessage = err?.message || String(err);
-
-            guardarLogFactura({
-                operationId,
-                success: false,
-                httpStatus,
-                intento: intentos,
-                requestBody: data,
-                responseBody,
-                errorMessage,
-            });
-
-            // logger.error("Factura falló tras reintentos", { item: i, status: httpStatus, operationId, errorMessage });
-        }
-    }
-
-    // Resumen final (puedes dejarlo igual)
-    const ok = resultadoEnvio.filter((r) => r.status === "fulfilled").length;
-    const fail = resultadoEnvio.length - ok;
-
-    console.log(`Resumen envío a Faktur: OK=${ok}, FAIL=${fail}, TOTAL=${resultadoEnvio.length}`);
-
-    return { ok, fail, total: resultadoEnvio.length };
+/** Errores por campo de Faktur (Django REST Framework) en una línea: "campo.sub: mensaje; …". */
+function resumirErrores(datos, prefijo = "") {
+    if (datos === null || datos === undefined) return [];
+    if (typeof datos !== "object") return [prefijo ? `${prefijo}: ${datos}` : String(datos)];
+    if (Array.isArray(datos)) return datos.flatMap((d) => resumirErrores(d, prefijo));
+    return Object.entries(datos).flatMap(([k, v]) => resumirErrores(v, k === "detail" && !prefijo ? "" : prefijo ? `${prefijo}.${k}` : k));
 }
 
+/** Motivo de un fallo de Faktur en lenguaje del usuario. */
+function motivoFaktur(err, intentos) {
+    const status = err.response?.status;
+    const veces = intentos > 1 ? ` (se intentó ${intentos} veces)` : "";
+    if (!status) return `No se pudo conectar con Faktur${veces}. Revisa la conexión a internet y la URL de Faktur.`;
+    if (status === 401 || status === 403) return "Faktur rechazó el token. Revisa el token en la configuración.";
+    if (status >= 500 || status === 429) return `Faktur no está disponible en este momento${veces}.`;
+    const detalle = resumirErrores(err.response.data).join("; ").slice(0, 500);
+    return `Faktur rechazó la factura${detalle ? `: ${detalle}` : "."}`;
+}
 
+/**
+ * Envía un payload a Faktur con reintentos ante fallos transitorios. No lanza.
+ * @returns {Promise<{ok: boolean, intentos: number, httpStatus: number|null, respuesta: any, motivo: string|null}>}
+ */
+export async function enviarAFaktur(payload, cfg) {
+    let intentos = 0;
+    try {
+        const res = await conReintentos(() => {
+            intentos++;
+            return crearFactura(payload, cfg);
+        }, {
+            intentos: 3,
+            baseMs: 600,
+            maxMs: 10000,
+            onRetry: ({ intento, delay, status, mensaje }) =>
+                logger.warn("Reintento de envío a Faktur", { operationId: payload.operation_id, intento, delay, status, mensaje }),
+        });
+        return { ok: true, intentos, httpStatus: res.status, respuesta: res.data, motivo: null };
+    } catch (err) {
+        return {
+            ok: false,
+            intentos,
+            httpStatus: err.response?.status ?? null,
+            respuesta: err.response?.data ?? null,
+            motivo: motivoFaktur(err, intentos),
+        };
+    }
+}
 
 //funciones del logger seguras
 // ==== Helpers de logging seguro ====

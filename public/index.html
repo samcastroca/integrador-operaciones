@@ -12,13 +12,87 @@
     <div class="container">
       <span class="navbar-brand">Integrador Faktur</span>
       <ul class="navbar-nav" id="menu" hidden>
-        <li class="nav-item"><a class="nav-link active" href="#configuracion">Configuración</a></li>
+        <li class="nav-item"><a class="nav-link" href="#enviar">Enviar facturas</a></li>
+        <li class="nav-item"><a class="nav-link" href="#configuracion">Configuración</a></li>
       </ul>
     </div>
   </nav>
 
-  <main class="container" style="max-width: 720px">
+  <main class="container" style="max-width: 960px">
     <p id="cargando" class="text-secondary">Cargando…</p>
+
+    <section id="enviar" hidden>
+      <h1 class="h3">Enviar facturas</h1>
+
+      <form id="form-consulta" class="mb-3" novalidate>
+        <div class="mb-3">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="modo" id="m-dia" value="dia" checked>
+            <label class="form-check-label" for="m-dia">Un día</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="modo" id="m-rango" value="rango">
+            <label class="form-check-label" for="m-rango">Rango de fechas</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="modo" id="m-numeros" value="numeros">
+            <label class="form-check-label" for="m-numeros">Números de factura</label>
+          </div>
+        </div>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-4" id="modo-dia">
+            <label class="form-label" for="fecha">Fecha</label>
+            <input class="form-control" id="fecha" type="date">
+          </div>
+          <div class="col-sm-8 row g-3" id="modo-rango" hidden>
+            <div class="col-6">
+              <label class="form-label" for="desde">Desde</label>
+              <input class="form-control" id="desde" type="date">
+            </div>
+            <div class="col-6">
+              <label class="form-label" for="hasta">Hasta</label>
+              <input class="form-control" id="hasta" type="date">
+            </div>
+          </div>
+          <div class="col-sm-8" id="modo-numeros" hidden>
+            <label class="form-label" for="numeros">Números (separados por comas o espacios)</label>
+            <input class="form-control" id="numeros" placeholder="FCO24932, FCR1050">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary" id="consultar">Consultar</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="mensaje-envio" class="alert" role="status" hidden></div>
+
+      <div id="lista" hidden>
+        <div class="table-responsive bg-body border rounded mb-3" style="max-height: 50vh">
+          <table class="table table-sm table-hover align-middle mb-0" id="tabla-facturas">
+            <thead class="sticky-top">
+              <tr>
+                <th><input class="form-check-input" type="checkbox" id="todas" aria-label="Elegir todas"></th>
+                <th>Número</th><th>Fecha</th><th>Tercero</th><th class="text-end">Total</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn-success" id="btn-enviar" disabled>Enviar a Faktur (0)</button>
+      </div>
+
+      <div id="progreso" class="mt-4" hidden>
+        <div class="d-flex justify-content-between"><span>Progreso</span><span id="contador"></span></div>
+        <div class="progress mb-3" role="progressbar" aria-label="Progreso del envío" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-bar" id="barra" style="width: 0%"></div>
+        </div>
+        <table class="table table-sm bg-body border" id="tabla-fallidas" hidden>
+          <thead><tr><th>Factura fallida</th><th>Motivo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button type="button" class="btn btn-outline-primary" id="reintentar" hidden>Reintentar las fallidas</button>
+      </div>
+    </section>
 
     <section id="configuracion" hidden>
       <h1 class="h3" id="titulo">Configuración</h1>
