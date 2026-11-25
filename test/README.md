@@ -31,6 +31,8 @@ la etapa 8) queda en la checklist de `etapas.md`.
 - `DATOS_DIR`: carpeta del único archivo `.sqlite`, con las tablas `configuracion` y
   `factura_envios_log`.
 - `LOGS_DIR`: carpeta de los logs de Winston.
+- `CONTAPYME_PUERTO_LOCAL` (opcional): puerto donde se busca el agente en `127.0.0.1` cuando no hay
+  configuración (por defecto 9000).
 
 Debe responder `GET /health` → `{ ok: true }`.
 
@@ -40,8 +42,8 @@ en claro (el integrador la convierte a MD5 hex en minúsculas para el agente).
 
 | Ruta | Respuesta |
 |---|---|
-| `GET /api/config` | `{ configurado, config }`, con `contrasena` y `fakturToken` como `"********"` |
-| `POST /api/config/probar` | `{ ok, mensaje }`: login real, no guarda nada |
+| `GET /api/config` | `{ configurado, config }`, con `contrasena` y `fakturToken` como `"********"`. Sin configuración, `config` trae `ip` y `puerto` del agente local si lo encuentra |
+| `POST /api/config/probar` | `{ ok, mensaje }`: login real y una consulta de un registro (valida el `iapp`), no guarda nada |
 | `PUT /api/config` | 200 si la prueba pasa; 4xx `{ ok: false, mensaje }` sin cambios si no. Una `contrasena` o un `fakturToken` vacíos conservan el valor guardado |
 
 ### Facturas y envíos

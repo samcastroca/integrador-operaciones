@@ -17,7 +17,7 @@ const OCULTO = "********";
 function codigoFuente() {
     return execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: raiz, encoding: "utf8" })
         .split("\0")
-        .filter((f) => /\.(mjs|js|cjs|html)$/.test(f) && !/^(test|fixtures|node_modules)\//.test(f))
+        .filter((f) => /\.(mjs|js|cjs|html)$/.test(f) && !/^(test|fixtures|node_modules|scripts)\//.test(f))
         .map((f) => ({ f, texto: readFileSync(path.join(raiz, f), "utf8") }));
 }
 
@@ -132,8 +132,19 @@ test("2.5 probar conexión: éxito, mensaje del agente y error de red, sin guard
     }
 });
 
-test("2.7 detección de ContaPyme en localhost", { todo: "el contrato depende del puerto real del agente (1.1)" }, () => {
-    assert.fail("pendiente");
+test("2.7 con la base vacía sugiere IP y puerto del ContaPyme local", E, async () => {
+    // El puerto buscado es 9000 (servidor de pruebas, 1.1); CONTAPYME_PUERTO_LOCAL lo cambia.
+    const cp = await simularContaPyme();
+    const srv = await arrancarServidor({ env: { CONTAPYME_PUERTO_LOCAL: String(cp.puerto) } });
+    try {
+        const r = await pedir(`${srv.url}/api/config`);
+        assert.equal(r.body.configurado, false);
+        assert.equal(r.body.config.ip, "127.0.0.1");
+        assert.equal(Number(r.body.config.puerto), cp.puerto);
+    } finally {
+        await srv.parar();
+        await cp.cerrar();
+    }
 });
 
 test("2.8 sirve la interfaz en 127.0.0.1 y no es accesible desde la IP de la red", E, async (t) => {
