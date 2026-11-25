@@ -7,9 +7,9 @@ import { guardarLogFactura } from "./facturaLogs.sqlite.mjs";
 /**
  * Función auxiliar para enviar POST
  */
-export async function enviarPost(url, data, headers = {}) {
+export async function enviarPost(url, data, headers = {}, timeoutMs = 15000) {
     try {
-        const response = await axios.post(url, data, { headers });
+        const response = await axios.post(url, data, { headers, timeout: timeoutMs });
         return response.data;
     } catch (error) {
         console.error("Error en la petición:", error.message);
@@ -17,53 +17,61 @@ export async function enviarPost(url, data, headers = {}) {
     }
 }
 
+const RECURSO = "/datasnap/rest/";
+const CONTROLKEY = "1D740FDE63";
+
+/** URL de un método del agente ContaPyme según la configuración. */
+const urlAgente = (cfg, metodo) => `http://${cfg.ip}:${cfg.puerto}${RECURSO}${metodo}`;
+
+/** Devuelve `respuesta` o lanza un error con el `mensaje` del agente si trae `resultado: "false"`. */
+function exigirResultado(respuesta) {
+    const encabezado = respuesta?.result?.[0]?.encabezado;
+    if (encabezado?.resultado !== "true") {
+        throw Object.assign(new Error(encabezado?.mensaje || "ContaPyme respondió sin resultado."), { agente: true });
+    }
+    return respuesta.result[0].respuesta;
+}
+
 /**
- * Función de autenticación
- * @param {string} ip - Dirección IP del servicio
- * @param {number|string} puerto - Puerto del servicio
- * @param {string} recurso1 - Parte base de la ruta
+ * Login en el agente, con la contraseña en MD5 hex en minúsculas (subtarea 1.4).
+ * @param {{ip, puerto, email, contrasenaMd5, iapp}} cfg
+ * @returns {Promise<string>} keyagente
  */
-export async function autenticacion(ip, puerto, recurso1, email, password, idMaquina) {
-    const recurso2 = 'TBasicoGeneral/"GetAuth"/';
-    const url = `http://${ip}:${puerto}${recurso1}${recurso2}`;
-
-    console.log("URL generada:", url);
-
-    const parametros =
-    {
-        "_parameters":
-            [
-                {
-                    email: email,
-                    password: password,
-                    userId: idMaquina,
-                },
-                "1D740FDE63",
-                idMaquina,
-                "0"
-            ]
+export async function autenticacion(cfg, { timeoutMs = 15000 } = {}) {
+    const parametros = {
+        _parameters: [{ email: cfg.email, password: cfg.contrasenaMd5 }, CONTROLKEY, cfg.iapp, "0"],
     };
+    const respuesta = await enviarPost(urlAgente(cfg, 'TBasicoGeneral/"GetAuth"/'), parametros, {}, timeoutMs);
+    const keyagente = exigirResultado(respuesta)?.datos?.keyagente;
+    if (!keyagente) throw Object.assign(new Error("ContaPyme no devolvió la sesión."), { agente: true });
+    return keyagente;
+}
 
+/**
+ * Prueba de conexión: login y una consulta de un registro, que valida el iapp (GetAuth no lo valida).
+ * @returns {Promise<{ok: boolean, mensaje: string}>}
+ */
+export async function probarConexion(cfg) {
     try {
-        const respuesta = await enviarPost(url, parametros);
-        return respuesta;
+        const keyagente = await autenticacion(cfg, { timeoutMs: 10000 });
+        exigirResultado(await obtenerFacturasPorPlazo(cfg, keyagente, { cantidad: "1", timeoutMs: 10000 }));
+        return { ok: true, mensaje: "Conexión correcta con ContaPyme." };
     } catch (err) {
-        console.error("No se pudo completar la solicitud.");
-        throw err;
+        if (err.agente) return { ok: false, mensaje: `ContaPyme rechazó la conexión: ${err.message}` };
+        return {
+            ok: false,
+            mensaje: `No se pudo conectar con ContaPyme en ${cfg.ip}:${cfg.puerto}. ` +
+                "Revisa que el agente esté encendido y que la IP y el puerto sean correctos.",
+        };
     }
 }
 
-
-
 /**
- * Función de Obtener Facturas
- * @param {string} ip - Dirección IP del servicio
- * @param {number|string} puerto - Puerto del servicio
- * @param {string} recurso1 - Parte base de la ruta
+ * Una página de la lista de operaciones.
+ * @param {{ip, puerto, iapp}} cfg
  */
-export async function obtenerFacturasPorPlazo(ip, puerto, recurso1, iapp, plazo, tipos_de_facturas, keyagente, pagina, sql) {
-    const recurso2 = 'TCatOperaciones/"GetListaOperaciones"/';
-    const url = `http://${ip}:${puerto}${recurso1}${recurso2}`;
+export async function obtenerFacturasPorPlazo(cfg, keyagente, { pagina = "1", sql, tipos = "ING1", plazo = 0, cantidad = "50", timeoutMs } = {}) {
+    const url = urlAgente(cfg, 'TCatOperaciones/"GetListaOperaciones"/');
 
     const fechaActualUtcMenos5 = moment().tz('America/Bogota');
     const fechaMenosUnaHora = fechaActualUtcMenos5.clone().subtract(parseInt(plazo), 'days');
@@ -75,7 +83,7 @@ export async function obtenerFacturasPorPlazo(ip, puerto, recurso1, iapp, plazo,
         "_parameters": [
             {
                 "datospagina": {
-                    "cantidadregistros": "50",
+                    "cantidadregistros": cantidad,
                     "pagina": pagina
                 },
                 "camposderetorno": [
@@ -102,21 +110,18 @@ export async function obtenerFacturasPorPlazo(ip, puerto, recurso1, iapp, plazo,
                 },
                 "datosfiltro": {
                     "banulada": "F",
-                    "itdoper": tipos_de_facturas,
+                    "itdoper": tipos,
                     "sql": consulta
                 }
             },
             keyagente,
-            iapp,
+            cfg.iapp,
             "0"
         ]
     };
 
-    console.log(url);
-    console.log(JSON.stringify(parametros));
-
     try {
-        const respuesta = await enviarPost(url, parametros);
+        const respuesta = await enviarPost(url, parametros, {}, timeoutMs);
         return respuesta;
     } catch (err) {
         console.error("No se pudo completar la solicitud.");
@@ -125,43 +130,11 @@ export async function obtenerFacturasPorPlazo(ip, puerto, recurso1, iapp, plazo,
 }
 
 
-//funciones para traer clientes
-/**
- * Obtiene los datos de un usuario desde un servicio con autenticación Basic
- * @param {number} userId - ID del usuario a consultar
- * @returns {Promise<object>} - Datos del usuario
- */
-export async function obtenerUsuario(userId) {
-    // Endpoint base
-    const url = `https://facturas.dzdigital.com.co/wp-json/wp/v2/users/${userId}`;
-
-    // Usuario y contraseña
-    const username = "admin";
-    const password = process.env.WP_APP_PASSWORD;
-
-    // Codificar en Base64
-    const token = Buffer.from(`${username}:${password}`).toString("base64");
-
-    try {
-        const resp = await axios.get(url, {
-            headers: {
-                Authorization: `Basic ${token}`,
-            },
-        });
-
-        return resp.data;
-    } catch (error) {
-        console.error("Error obteniendo usuario:", error.response?.status, error.message);
-        throw error;
-    }
-}
-
-
-
-export async function ProcesarDatos(loteFacturas, nit, ip_del_servidor, puerto, recurso1, iapp, keyagente) {
+export async function ProcesarDatos(loteFacturas, cfg, keyagente) {
 
 
     const currency = "COP";
+    const nit = cfg.nit;
     const main_sender = nit;
     let consolidado = [];
 
@@ -172,8 +145,8 @@ export async function ProcesarDatos(loteFacturas, nit, ip_del_servidor, puerto, 
         const inumoper_operaciones = loteFacturas[index].inumoper;
         const itdoper_operaciones = loteFacturas[index].itdoper;
 
-        const tercero = await obtenerTercero(ip_del_servidor, puerto, recurso1, nit, keyagente, iapp);
-        const detalleFactura = await obtenerDetalleFactura(ip_del_servidor, puerto, recurso1, iapp, keyagente, inumoper_operaciones, itdoper_operaciones);
+        const tercero = await obtenerTercero(cfg, keyagente, nit);
+        const detalleFactura = await obtenerDetalleFactura(cfg, keyagente, inumoper_operaciones, itdoper_operaciones);
 
 
         // Accesos seguros con optional chaining
@@ -200,7 +173,7 @@ export async function ProcesarDatos(loteFacturas, nit, ip_del_servidor, puerto, 
 
         const nitComprador = datosprincipales.init;
 
-        const terceroComprador = await obtenerTercero(ip_del_servidor, puerto, recurso1, nitComprador, keyagente, iapp);
+        const terceroComprador = await obtenerTercero(cfg, keyagente, nitComprador);
 
         const infoBasicaTerceroComprador = terceroComprador?.result?.[0]?.respuesta?.datos?.infobasica ?? {};
 
@@ -317,9 +290,8 @@ export async function ProcesarDatos(loteFacturas, nit, ip_del_servidor, puerto, 
 
 
 //Funcion para obtener el detalle de la factura
-async function obtenerDetalleFactura(ip, puerto, recurso1, iapp, keyagente, inumoper, itdoper) {
-    const recurso2 = 'TCatOperaciones/"DoExecuteOprAction"/';
-    const url = `http://${ip}:${puerto}${recurso1}${recurso2}`;
+async function obtenerDetalleFactura(cfg, keyagente, inumoper, itdoper) {
+    const url = urlAgente(cfg, 'TCatOperaciones/"DoExecuteOprAction"/');
 
     console.log("URL generada:", url);
 
@@ -336,7 +308,7 @@ async function obtenerDetalleFactura(ip, puerto, recurso1, iapp, keyagente, inum
                 ]
             },
             keyagente,
-            iapp,
+            cfg.iapp,
             "0"
         ]
     };
@@ -350,10 +322,8 @@ async function obtenerDetalleFactura(ip, puerto, recurso1, iapp, keyagente, inum
 }
 
 //Funcion para obtener el detalle de la factura
-async function obtenerTercero(ip, puerto, recurso1, nit, keyagente, iapp) {
-
-    const recurso2 = 'TCatTerceros/"GetInfoTercero"/';
-    const url = `http://${ip}:${puerto}${recurso1}${recurso2}`;
+async function obtenerTercero(cfg, keyagente, nit) {
+    const url = urlAgente(cfg, 'TCatTerceros/"GetInfoTercero"/');
 
     console.log("URL generada:", url);
 
@@ -365,7 +335,7 @@ async function obtenerTercero(ip, puerto, recurso1, nit, keyagente, iapp) {
 
             },
             keyagente,
-            iapp
+            cfg.iapp
         ]
     };
     try {
@@ -378,8 +348,8 @@ async function obtenerTercero(ip, puerto, recurso1, nit, keyagente, iapp) {
 }
 
 
-export async function enviarFacturasProcesadas(nit, ip_del_servidor, puerto, recurso1, keyagente, iapp, plazo, tipos_de_facturas, sql) {
-    const paginasFacturas = await obtenerFacturasPorPlazo(ip_del_servidor, puerto, recurso1, iapp, plazo, tipos_de_facturas, keyagente, "1", sql);
+export async function enviarFacturasProcesadas(cfg, keyagente, tipos, sql) {
+    const paginasFacturas = await obtenerFacturasPorPlazo(cfg, keyagente, { pagina: "1", sql, tipos });
 
     const paginas = paginasFacturas?.result[0]?.respuesta?.paginacion?.totalpaginas ?? false;
 
@@ -390,12 +360,12 @@ export async function enviarFacturasProcesadas(nit, ip_del_servidor, puerto, rec
     }
 
     for (let index = 1; index <= paginas; index++) {
-        const loteFacturas = await obtenerFacturasPorPlazo(ip_del_servidor, puerto, recurso1, iapp, plazo, tipos_de_facturas, keyagente, index, sql);
-        const procesados = await ProcesarDatos(loteFacturas.result[0].respuesta.datos, nit, ip_del_servidor, puerto, recurso1, iapp, keyagente);
+        const loteFacturas = await obtenerFacturasPorPlazo(cfg, keyagente, { pagina: index, sql, tipos });
+        const procesados = await ProcesarDatos(loteFacturas.result[0].respuesta.datos, cfg, keyagente);
 
         console.log(JSON.stringify(procesados));
 
-        await enviarFacturasFaktur(procesados);
+        await enviarFacturasFaktur(procesados, cfg);
 
 
     }
@@ -467,11 +437,11 @@ async function conReintentos(fn, opts = {}) {
     throw ultimoError;
 }
 
-async function crearFactura(data, { timeoutMs = 15000 } = {}) {
-    const apiUrl = "https://develop.faktur.co/api/operations/";
+async function crearFactura(data, cfg, { timeoutMs = 15000 } = {}) {
+    const apiUrl = cfg.fakturUrl;
     const config = {
         headers: {
-            Authorization: `Token ${process.env.FAKTUR_TOKEN}`,
+            Authorization: `Token ${cfg.fakturToken}`,
             "Content-Type": "application/json",
         },
         timeout: timeoutMs, // timeout defensivo por petición
@@ -484,12 +454,12 @@ async function crearFactura(data, { timeoutMs = 15000 } = {}) {
  * Envío en paralelo con reintentos individuales por factura.
  * Limita logs y muestra un resumen final.
  */
-async function enviarFacturasFaktur(procesados) {
+async function enviarFacturasFaktur(procesados, cfg) {
     const intentos = 3; // intentos configurados en conReintentos
 
     const tareas = procesados.map((data, idx) =>
         conReintentos(
-            () => crearFactura(data),
+            () => crearFactura(data, cfg),
             {
                 intentos,
                 baseMs: 600,

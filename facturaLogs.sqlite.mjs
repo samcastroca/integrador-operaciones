@@ -1,16 +1,5 @@
 // facturaLogs.sqlite.mjs
-import Database from "better-sqlite3";
-import path from "node:path";
-import { logsDir } from "./logger.mjs";
-
-// Usamos la misma carpeta de logs para guardar la BD
-const dbFile = path.join(logsDir, "facturas.sqlite");
-
-// Crea/abre la BD
-const db = new Database(dbFile);
-
-// Mejor para concurrencia
-db.pragma("journal_mode = WAL");
+import { db } from "./datos.mjs";
 
 // Creamos la tabla si no existe
 db.exec(`
