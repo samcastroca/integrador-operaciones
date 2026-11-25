@@ -1,22 +1,33 @@
 // Interfaz del integrador: navegación, asistente y pantalla de configuración.
 import { $, mostrarMensaje, pedir } from "./comun.js";
 import { iniciarEnvio } from "./enviar.js";
+import { iniciarEstado } from "./estado.js";
+import { iniciarHistorial } from "./historial.js";
 
 const form = $("form-config");
 const CAMPOS = ["ip", "puerto", "email", "contrasena", "iapp", "nit", "fakturUrl", "fakturToken"];
 const SECRETOS = ["contrasena", "fakturToken"];
-const PANTALLAS = ["enviar", "configuracion"];
+/** Pantalla (id de su sección y hash del menú) → qué hacer al entrar. */
+const PANTALLAS = {
+    enviar: iniciarEnvio,
+    historial: iniciarHistorial,
+    estado: iniciarEstado,
+    configuracion: () => { },
+};
 let configurado = false;
 
 /** Muestra la pantalla del hash; sin configuración, toda ruta lleva al asistente. */
 function navegar() {
     const pedida = location.hash.slice(1);
-    const pantalla = !configurado ? "configuracion" : PANTALLAS.includes(pedida) ? pedida : "enviar";
-    for (const p of PANTALLAS) $(p).hidden = p !== pantalla;
+    const pantalla = !configurado ? "configuracion" : pedida in PANTALLAS ? pedida : "enviar";
+    for (const p of Object.keys(PANTALLAS)) $(p).hidden = p !== pantalla;
     for (const a of document.querySelectorAll("#menu .nav-link")) {
-        a.classList.toggle("active", a.getAttribute("href") === `#${pantalla}`);
+        const activa = a.getAttribute("href") === `#${pantalla}`;
+        a.classList.toggle("active", activa);
+        if (activa) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
     }
-    if (pantalla === "enviar") iniciarEnvio();
+    PANTALLAS[pantalla]();
 }
 
 function leerFormulario() {
@@ -76,8 +87,10 @@ form.addEventListener("submit", async (ev) => {
     $("guardar").disabled = true;
     const { datos } = await pedir("/api/config", { method: "PUT", body: leerFormulario() });
     if (!datos.ok) return mostrarMensaje("mensaje", datos.mensaje, "danger");
+    // Se queda en Configuración para que el aviso de guardado se vea; el menú ya queda disponible.
+    history.replaceState(null, "", "#configuracion");
     await iniciar();
-    mostrarMensaje("mensaje", datos.mensaje, "success");
+    mostrarMensaje("mensaje", `${datos.mensaje} Ya puedes ir a "Enviar facturas".`, "success");
 });
 
 iniciar();

@@ -6,6 +6,8 @@ import logsRouter from "./logs.routes.mjs";
 import facturaLogsRouter from "./facturaLogs.routes.mjs";
 import configRouter from "./config.routes.mjs";
 import { enviosRouter, facturasRouter } from "./envios.routes.mjs";
+import estadoRouter from "./estado.routes.mjs";
+import logger from "./logger.mjs";
 
 const app = express();
 const raiz = path.dirname(fileURLToPath(import.meta.url));
@@ -21,6 +23,7 @@ app.use("/vendor/bootstrap", express.static(path.join(raiz, "node_modules", "boo
 app.use("/api/config", configRouter);
 app.use("/api/facturas", facturasRouter);
 app.use("/api/envios", enviosRouter);
+app.use("/api/estado", estadoRouter);
 
 // Salud
 app.get("/health", async (_req, res) => {
@@ -34,6 +37,21 @@ app.use("/logs/facturas", facturaLogsRouter);
 
 // Montar las rutas de logs protegidas
 //app.use("/logs", logsRouter);
+
+// Errores siempre como { ok: false, mensaje } en lenguaje del usuario (subtarea 4.7).
+app.use(["/api", "/logs"], (_req, res) => {
+  res.status(404).json({ ok: false, mensaje: "Esa acción no existe en el integrador." });
+});
+app.use((err, _req, res, _next) => {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ ok: false, mensaje: "Los datos enviados no son válidos." });
+  }
+  logger.error("Error inesperado", { mensaje: err.message, stack: err.stack });
+  res.status(err.status && err.status < 500 ? err.status : 500).json({
+    ok: false,
+    mensaje: "Ocurrió un error inesperado. Revisa los logs del integrador.",
+  });
+});
 
 
 

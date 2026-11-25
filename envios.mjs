@@ -9,7 +9,16 @@ import logger from "./logger.mjs";
 /** Facturas que se procesan a la vez (ContaPyme y Faktur). */
 const CONCURRENCIA = 4;
 
+/** Envíos terminados que se conservan en memoria (los resultados siguen en la bitácora). */
+const MAX_TERMINADOS = 50;
+
 const envios = new Map();
+
+/** Olvida los envíos terminados más antiguos por encima de MAX_TERMINADOS. */
+function podar() {
+    const terminados = [...envios.values()].filter((e) => e.terminado);
+    for (const e of terminados.slice(0, Math.max(0, terminados.length - MAX_TERMINADOS))) envios.delete(e.id);
+}
 
 /** Error con un mensaje apto para mostrar al usuario y su código HTTP. */
 export class ErrorEnvio extends Error {
@@ -30,6 +39,7 @@ export function crearEnvio(cfg, inumopers) {
         throw new ErrorEnvio(`${repetidas} de las facturas elegidas ya se están enviando. Espera a que termine ese envío.`, 409);
     }
     const envio = { id: randomUUID(), inumopers, total: inumopers.length, procesadas: 0, resultados: [], terminado: false };
+    podar();
     envios.set(envio.id, envio);
     procesar(envio, cfg)
         .catch((err) => logger.error("Error inesperado en un envío", { id: envio.id, mensaje: err.message, stack: err.stack }))
