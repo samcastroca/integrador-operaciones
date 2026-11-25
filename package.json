@@ -4,10 +4,9 @@
   "description": "",
   "main": "importador_facturas_manual.mjs",
   "config": {
-    "etapa": 1
+    "etapa": 2
   },
   "scripts": {
-    "start": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_plazo.mjs",
     "manual": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_manual.mjs",
     "test": "node --test test/*.test.mjs"
   },
@@ -18,6 +17,7 @@
     "axios": "^1.9.0",
     "axios-retry": "^4.5.0",
     "better-sqlite3": "^12.5.0",
+    "bootstrap": "^5.3.9",
     "csv-parser": "^3.0.0",
     "dotenv": "^17.2.2",
     "express": "^4.21.2",

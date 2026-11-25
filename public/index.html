@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Integrador ContaPyme → Faktur</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-expand bg-body border-bottom mb-4">
+    <div class="container">
+      <span class="navbar-brand">Integrador Faktur</span>
+      <ul class="navbar-nav" id="menu" hidden>
+        <li class="nav-item"><a class="nav-link active" href="#configuracion">Configuración</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width: 720px">
+    <p id="cargando" class="text-secondary">Cargando…</p>
+
+    <section id="configuracion" hidden>
+      <h1 class="h3" id="titulo">Configuración</h1>
+      <p class="text-secondary" id="ayuda"></p>
+
+      <form id="form-config" novalidate autocomplete="off">
+        <fieldset class="mb-4">
+          <legend class="h5">ContaPyme</legend>
+          <div class="row g-3">
+            <div class="col-8">
+              <label class="form-label" for="ip">IP o nombre del equipo</label>
+              <input class="form-control" id="ip" name="ip" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label" for="puerto">Puerto</label>
+              <input class="form-control" id="puerto" name="puerto" type="number" min="1" max="65535" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="email">Email del usuario</label>
+              <input class="form-control" id="email" name="email" type="email" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="contrasena">Contraseña</label>
+              <input class="form-control" id="contrasena" name="contrasena" type="password" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="iapp">Código de aplicación (iapp)</label>
+              <input class="form-control" id="iapp" name="iapp" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="nit">NIT de la empresa</label>
+              <input class="form-control" id="nit" name="nit" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="mb-4">
+          <legend class="h5">Faktur</legend>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="fakturUrl">URL de operaciones</label>
+              <input class="form-control" id="fakturUrl" name="fakturUrl" type="url" required
+                     placeholder="https://…/api/operations/">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="fakturToken">Token</label>
+              <input class="form-control" id="fakturToken" name="fakturToken" type="password" autocomplete="new-password">
+            </div>
+          </div>
+        </fieldset>
+
+        <div id="mensaje" class="alert" role="status" hidden></div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-primary" id="probar">Probar conexión</button>
+          <button type="submit" class="btn btn-primary" id="guardar" disabled>Guardar</button>
+        </div>
+        <p class="form-text">"Guardar" se habilita cuando la prueba de conexión es correcta.</p>
+      </form>
+    </section>
+  </main>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
