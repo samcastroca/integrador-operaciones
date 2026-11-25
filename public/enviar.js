@@ -4,6 +4,16 @@ import { $, mostrarMensaje, pedir } from "./comun.js";
 const form = $("form-consulta");
 const pesos = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 let facturas = [];
+/** Hay un envío en curso: no se puede consultar ni enviar hasta que termine. */
+let enviando = false;
+/** Fallos de red seguidos tolerados al seguir el progreso antes de rendirse. */
+const MAX_FALLOS_RED = 5;
+
+function bloquear(activo) {
+    enviando = activo;
+    $("consultar").disabled = activo;
+    actualizarBoton();
+}
 
 function mostrarModo() {
     const modo = form.elements.modo.value;
@@ -23,7 +33,7 @@ function seleccionadas() {
 
 function actualizarBoton() {
     const n = seleccionadas().length;
-    $("btn-enviar").disabled = n === 0;
+    $("btn-enviar").disabled = enviando || n === 0;
     $("btn-enviar").textContent = `Enviar a Faktur (${n})`;
 }
 
@@ -59,6 +69,7 @@ form.elements.modo.forEach((r) => r.addEventListener("change", mostrarModo));
 
 form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    if (enviando) return;
     $("consultar").disabled = true;
     $("lista").hidden = true;
     $("progreso").hidden = true;
@@ -90,9 +101,21 @@ async function seguir(id) {
     $("progreso").hidden = false;
     $("reintentar").hidden = true;
     $("tabla-fallidas").hidden = true;
+    let fallosRed = 0;
     for (; ;) {
         const { status, datos } = await pedir(`/api/envios/${id}`);
-        if (status !== 200) return mostrarMensaje("mensaje-envio", datos.mensaje, "danger");
+        if (status === 0 && ++fallosRed < MAX_FALLOS_RED) {
+            await new Promise((r) => setTimeout(r, 1000));
+            continue;
+        }
+        if (status !== 200) {
+            bloquear(false);
+            const mensaje = status === 404
+                ? "Se perdió el seguimiento del envío (¿se reinició el integrador?). Vuelve a consultar para ver qué facturas quedaron enviadas."
+                : datos.mensaje;
+            return mostrarMensaje("mensaje-envio", mensaje, "danger");
+        }
+        fallosRed = 0;
         const pct = datos.total ? Math.round((100 * datos.procesadas) / datos.total) : 0;
         $("barra").style.width = `${pct}%`;
         $("barra").parentElement.setAttribute("aria-valuenow", String(pct));
@@ -120,17 +143,22 @@ function mostrarResultado(id, { resultados }) {
     $("tabla-fallidas").hidden = fallidas.length === 0;
     $("reintentar").hidden = fallidas.length === 0;
     $("reintentar").dataset.envio = id;
-    $("btn-enviar").disabled = false;
+
+    // Las que salieron bien pasan a "Ya enviada" (desmarcadas): reenviarlas vuelve a pedir confirmación.
+    const enviadas = new Set(resultados.filter((r) => r.ok).map((r) => r.inumoper));
+    for (const f of facturas) if (enviadas.has(f.inumoper)) f.yaEnviada = true;
+    pintarLista();
+    bloquear(false);
 }
 
 $("btn-enviar").addEventListener("click", async () => {
     const elegidas = seleccionadas();
     const repetidas = facturas.filter((f) => f.yaEnviada && elegidas.includes(f.inumoper)).length;
     if (repetidas && !confirm(`${repetidas} de las facturas elegidas ya se enviaron. ¿Enviarlas otra vez?`)) return;
-    $("btn-enviar").disabled = true;
+    bloquear(true);
     const { status, datos } = await pedir("/api/envios", { method: "POST", body: { facturas: elegidas } });
-    if (status >= 300) {
-        $("btn-enviar").disabled = false;
+    if (status >= 300 || status === 0) {
+        bloquear(false);
         return mostrarMensaje("mensaje-envio", datos.mensaje, "danger");
     }
     mostrarMensaje("mensaje-envio", "Enviando a Faktur…", "secondary");
@@ -139,8 +167,12 @@ $("btn-enviar").addEventListener("click", async () => {
 
 $("reintentar").addEventListener("click", async () => {
     $("reintentar").hidden = true;
+    bloquear(true);
     const { status, datos } = await pedir(`/api/envios/${$("reintentar").dataset.envio}/reintentar`, { method: "POST" });
-    if (status >= 300) return mostrarMensaje("mensaje-envio", datos.mensaje, "danger");
+    if (status >= 300 || status === 0) {
+        bloquear(false);
+        return mostrarMensaje("mensaje-envio", datos.mensaje, "danger");
+    }
     mostrarMensaje("mensaje-envio", "Reintentando las fallidas…", "secondary");
     seguir(datos.id);
 });

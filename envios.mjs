@@ -19,8 +19,16 @@ export class ErrorEnvio extends Error {
     }
 }
 
-/** Crea un envío de las facturas (`inumoper`) y lo procesa en segundo plano. */
+/**
+ * Crea un envío de las facturas (`inumoper`) y lo procesa en segundo plano. Rechaza el envío si
+ * alguna de ellas ya está en otro envío en curso, para no mandarla dos veces a la vez a Faktur.
+ */
 export function crearEnvio(cfg, inumopers) {
+    const enCurso = new Set([...envios.values()].filter((e) => !e.terminado).flatMap((e) => e.inumopers));
+    const repetidas = inumopers.filter((n) => enCurso.has(n)).length;
+    if (repetidas) {
+        throw new ErrorEnvio(`${repetidas} de las facturas elegidas ya se están enviando. Espera a que termine ese envío.`, 409);
+    }
     const envio = { id: randomUUID(), inumopers, total: inumopers.length, procesadas: 0, resultados: [], terminado: false };
     envios.set(envio.id, envio);
     procesar(envio, cfg)
@@ -44,9 +52,12 @@ export function reintentarEnvio(cfg, id) {
     const envio = obtenerEnvio(id);
     if (!envio) throw new ErrorEnvio("No se encontró ese envío. Vuelve a consultar las facturas.", 404);
     if (!envio.terminado) throw new ErrorEnvio("El envío todavía está en curso.", 409);
+    if (envio.reintentadoPor) throw new ErrorEnvio("Ese envío ya se reintentó.", 409);
     const fallidas = envio.resultados.filter((r) => !r.ok).map((r) => r.inumoper);
     if (!fallidas.length) throw new ErrorEnvio("Ese envío no tiene facturas fallidas.");
-    return crearEnvio(cfg, fallidas);
+    const nuevo = crearEnvio(cfg, fallidas);
+    envio.reintentadoPor = nuevo.id;
+    return nuevo;
 }
 
 async function procesar(envio, cfg) {
@@ -68,7 +79,15 @@ async function procesar(envio, cfg) {
     const trabajador = async () => {
         while (cola.length) {
             const inumoper = cola.shift();
-            envio.resultados.push(await procesarFactura(cfg, keyagente, inumoper));
+            let resultado;
+            try {
+                resultado = await procesarFactura(cfg, keyagente, inumoper);
+            } catch (err) {
+                // procesarFactura no debería lanzar; si lo hace, la factura falla sola y el resto sigue.
+                logger.error("Error inesperado al procesar una factura", { inumoper, mensaje: err.message, stack: err.stack });
+                resultado = { inumoper, snumsop: null, ok: false, motivo: "Ocurrió un error inesperado. Revisa los logs del integrador." };
+            }
+            envio.resultados.push(resultado);
             envio.procesadas++;
         }
     };
