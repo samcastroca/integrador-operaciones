@@ -162,6 +162,20 @@ test("3.9 reintentar reenvía solo las fallidas y actualiza el resultado", E, as
     }
 });
 
+test("3.x apellidos con espacios de más en ContaPyme no dejan last_name vacío", E, async () => {
+    // Visto en el ContaPyme de pruebas (FCO22353): napellido = " Apellido1 Apellido2".
+    const e = await montarEscenario({ contapyme: { facturas: 1, napellido: "  PÉREZ   GÓMEZ " } });
+    try {
+        const fin = await enviarYEsperar(e.url, ["1001"]);
+        assert.equal(fin.resultados[0].ok, true, fin.resultados[0].motivo);
+        const comprador = e.fk.recibidas[0].cuerpo.secondary_sender;
+        assert.equal(comprador.last_name, "PÉREZ");
+        assert.equal(comprador.secondary_last_name, "GÓMEZ");
+    } finally {
+        await e.parar();
+    }
+});
+
 test("3.x ContaPyme solo recibe lecturas", E, async () => {
     const e = await montarEscenario({ contapyme: { facturas: 3 } });
     try {
