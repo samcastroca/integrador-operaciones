@@ -156,25 +156,3 @@ El contrato HTTP que fijan las pruebas está en [`test/README.md`](test/README.m
 | `test/` | Pruebas por etapa, simuladores y ayudas |
 | `fixtures/` | Respuestas reales de ContaPyme y Faktur, anonimizadas, para los simuladores |
 | `scripts/exploracion/` | Herramientas para capturar respuestas reales (leen `.env`; no las usa la app) |
-
-## Estado del proyecto
-
-| Etapa | Estado |
-|---|---|
-| 0. Arnés de pruebas y CI | ✅ |
-| 1. Exploración contra ContaPyme y Faktur de pruebas | ✅ (quedan preguntas abiertas al cliente) |
-| 2. Configuración sin WordPress | ✅ |
-| 3. Envío a demanda | ✅ probado de punta a punta contra el ContaPyme de pruebas y `develop.faktur.co` |
-| 4. Interfaz completa | ✅ |
-| 5. Pruebas del payload campo por campo | Pendiente |
-| 6. Reglas de negocio confirmadas con Faktur y el cliente | Pendiente |
-| 7. Instalador y acceso directo | Pendiente |
-| 8. Instalación en el equipo del cliente | Pendiente |
-
-**Reglas provisionales**, pendientes de confirmar en la etapa 6:
-
-- Si el comprador no trae dígito de verificación, se envía `"0"`.
-- Si el NIT emisor no existe como tercero en ContaPyme, la ciudad y el país de entrega se toman del
-  comprador.
-- El método de pago, la fecha de vencimiento, el tipo de documento del comprador y los impuestos de los
-  productos siguen las reglas heredadas del código original.
