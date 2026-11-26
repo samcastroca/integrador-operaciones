@@ -4,6 +4,8 @@ rem Si ya está corriendo, solo abre el navegador. Respeta PORT; con INTEGRADOR_
 chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
+rem Node portátil que instala instalar.ps1 cuando el equipo no tiene Node.js 22 o 24.
+if exist "%~dp0node\node.exe" set "PATH=%~dp0node;%PATH%"
 title Integrador Faktur
 if not defined PORT set "PORT=4000"
 set "SALUD=http://127.0.0.1:%PORT%/health"
@@ -17,7 +19,7 @@ if not errorlevel 1 (
 
 where node >nul 2>nul
 if errorlevel 1 (
-    echo No se encontró Node.js. Instálalo desde https://nodejs.org y vuelve a ejecutar instalar.ps1.
+    echo No se encontró Node.js. Ejecuta instalar.ps1: lo instala dentro de la carpeta del integrador.
     pause
     exit /b 1
 )
