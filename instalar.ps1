@@ -31,7 +31,8 @@ function Instalar-NodePortatil {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = "SilentlyContinue"   # la barra de progreso de PowerShell 5.1 hace lentísima la descarga
     $arquitectura = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "win-arm64" } else { "win-x64" }
-    $lts = Invoke-RestMethod "https://nodejs.org/dist/index.json" |
+    # Los paréntesis hacen que PowerShell 5.1 recorra el arreglo JSON en vez de pasarlo como un solo objeto.
+    $lts = (Invoke-RestMethod "https://nodejs.org/dist/index.json") |
         Where-Object { $_.version -like "v24.*" -and $_.lts } | Select-Object -First 1
     $nombre = "node-$($lts.version)-$arquitectura"
     $base = "https://nodejs.org/dist/$($lts.version)"
@@ -63,7 +64,7 @@ if (-not (Es-Compatible $version)) {
     else { Write-Host "    No se encontró Node.js." }
     Write-Host "    Se instalará Node.js 24 LTS dentro de la carpeta del integrador."
     try { Instalar-NodePortatil }
-    catch { Detener "No se pudo instalar Node.js: $($_.Exception.Message). Revisa la conexión a internet y vuelve a ejecutar el instalador." }
+    catch { Detener "No se pudo instalar Node.js. Revisa la conexión a internet y vuelve a ejecutar el instalador.`nDetalle: $($_.Exception.Message)" }
     Usar-NodePortatil
     $version = Version-Node
     if (-not (Es-Compatible $version)) { Detener "No se pudo instalar Node.js en $dirNode." }
