@@ -43,6 +43,16 @@ test("7.1 dos arranques seguidos no levantan dos servidores", { ...E, skip: proc
     }
 });
 
+test("7.5 servicio.ps1 instala WinSW comprobado por SHA-256 y se puede quitar", E, () => {
+    // Instalarlo de verdad exige administrador (UAC): se comprueba a mano (etapas.md, 7.5).
+    assert.ok(existe("servicio.ps1"), "falta servicio.ps1");
+    const ps = readFileSync(path.join(raiz, "servicio.ps1"), "utf8");
+    assert.match(ps, /winsw\/winsw\/releases\/download\/v[\d.]+\//);
+    assert.match(ps, /Get-FileHash/);
+    assert.match(ps, /\$shaWinSW = "[0-9A-F]{64}"/);
+    assert.match(ps, /\[switch\]\$Quitar/);
+});
+
 test("7.3 better-sqlite3 está en el lockfile", E, () => {
     const lock = JSON.parse(readFileSync(path.join(raiz, "package-lock.json"), "utf8"));
     assert.ok(lock.packages["node_modules/better-sqlite3"]);

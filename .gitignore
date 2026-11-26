@@ -1,6 +1,8 @@
 node_modules/
 # Node.js portátil que descarga instalar.ps1 si el equipo no tiene Node 22 o 24
 /node/
+# WinSW y su configuración, generados por servicio.ps1
+/servicio/
 dist/
 .env
 *.log
