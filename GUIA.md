@@ -25,6 +25,22 @@ maneja desde el navegador.
 
 4. Cuando diga **"Listo"**, tendrás en el escritorio el acceso directo **Integrador Faktur**.
 
+### Opcional: dejarlo siempre encendido (servicio de Windows)
+
+Si prefieres que el integrador arranque solo con el equipo, sin ventana negra, instálalo como servicio.
+En la misma ventana azul, dentro de `C:\IntegradorFaktur`:
+
+```
+powershell -ExecutionPolicy Bypass -File servicio.ps1
+```
+
+Windows pedirá permiso de administrador. Desde entonces, el acceso directo **Integrador Faktur** solo
+abre el navegador. Para volver al modo normal:
+
+```
+powershell -ExecutionPolicy Bypass -File servicio.ps1 -Quitar
+```
+
 ## Primera vez: configuración
 
 1. Abre el acceso directo **Integrador Faktur**. Se abre una ventana negra y, después, el navegador.
@@ -41,7 +57,7 @@ maneja desde el navegador.
 4. Mira el progreso. Al final verás cuáles llegaron bien y cuáles fallaron y por qué; puedes
    **Reintentar las fallidas**.
 5. Mientras lo usas, **deja abierta la ventana negra** (puedes minimizarla). Al cerrarla, el integrador
-   se apaga.
+   se apaga. Si lo instalaste como servicio, no hay ventana negra: sigue encendido.
 
 En **Historial** ves todos los envíos anteriores, y en **Estado de la conexión** puedes comprobar
 ContaPyme y Faktur.
@@ -51,7 +67,8 @@ ContaPyme y Faktur.
 Toda la información (configuración e historial de envíos) está en la carpeta
 `C:\IntegradorFaktur\datos`.
 
-1. Cierra la ventana negra del integrador.
+1. Cierra la ventana negra del integrador. Si está como servicio: tecla Windows → escribe `Servicios` →
+   busca **Integrador Faktur** → **Detener**. Al terminar la copia, **Iniciar**.
 2. Copia la carpeta `datos` completa a un lugar seguro (un disco externo o una carpeta en la nube).
 
 Para restaurar, cierra el integrador y vuelve a poner esa carpeta en `C:\IntegradorFaktur`.

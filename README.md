@@ -59,6 +59,11 @@ Ese acceso directo abre `iniciar.bat`: arranca el integrador y abre **http://loc
 navegador; si ya estaba abierto, solo abre el navegador. Mientras se usa, la ventana del integrador debe
 quedar abierta (se puede minimizar).
 
+Opcionalmente, `servicio.ps1` lo instala como **servicio de Windows** con
+[WinSW](https://github.com/winsw/winsw) 2.12.0 (comprobado por SHA-256): arranca con el equipo, se
+reinicia si falla y escribe sus logs en `logs\servicio`. Pide administrador; `servicio.ps1 -Quitar` lo
+desinstala. El acceso directo sigue sirviendo: con el servicio corriendo, solo abre el navegador.
+
 La guía para el cliente, con la instalación, el uso diario y la copia de seguridad, está en
 [GUIA.md](GUIA.md). En desarrollo también se puede arrancar con `npm run manual`, que lee `.env`.
 
