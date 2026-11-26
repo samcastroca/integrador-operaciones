@@ -4,7 +4,7 @@
   "description": "",
   "main": "importador_facturas_manual.mjs",
   "config": {
-    "etapa": 5
+    "etapa": 7
   },
   "scripts": {
     "manual": "node --env-file-if-exists=.env --max-old-space-size=8192 importador_facturas_manual.mjs",
@@ -28,5 +28,8 @@
     "nodemailer": "^7.0.3",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
   }
 }

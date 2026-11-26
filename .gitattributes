@@ -1,0 +1,3 @@
+# cmd.exe y Windows PowerShell esperan finales de línea CRLF, también en un .zip descargado de GitHub.
+*.bat text eol=crlf
+*.ps1 text eol=crlf

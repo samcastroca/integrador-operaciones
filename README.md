@@ -46,16 +46,19 @@ Navegador ──► Integrador (Node.js + Express, solo en 127.0.0.1:4000)
 
 ## Instalación y arranque
 
+Una sola vez, desde la carpeta del integrador (por ejemplo `C:\IntegradorFaktur`):
+
 ```powershell
-npm ci             # instala las dependencias (solo la primera vez)
-npm run manual     # arranca el integrador
+powershell -ExecutionPolicy Bypass -File instalar.ps1
 ```
 
-Luego abre **http://localhost:4000**. Mientras se usa, la ventana del integrador debe quedar abierta (se
-puede minimizar).
+Comprueba Node.js, ejecuta `npm ci` y crea el acceso directo **"Integrador Faktur"** en el escritorio.
+Ese acceso directo abre `iniciar.bat`: arranca el integrador y abre **http://localhost:4000** en el
+navegador; si ya estaba abierto, solo abre el navegador. Mientras se usa, la ventana del integrador debe
+quedar abierta (se puede minimizar).
 
-> El instalador con acceso directo en el escritorio (`instalar.ps1` / `iniciar.bat`) llega en la
-> etapa 7. Hasta entonces se arranca con `npm run manual`.
+La guía para el cliente, con la instalación, el uso diario y la copia de seguridad, está en
+[GUIA.md](GUIA.md). En desarrollo también se puede arrancar con `npm run manual`, que lee `.env`.
 
 Variables de entorno opcionales:
 
@@ -112,8 +115,10 @@ La prueba de Faktur no crea ni lista operaciones: solo comprueba la URL y el tok
 ## Datos y copia de seguridad
 
 Toda la información vive en **un solo archivo**: `datos/integrador.sqlite`, con la configuración y la
-bitácora de envíos. Para hacer una copia de seguridad, cierra el integrador y copia ese archivo. Los logs
-técnicos van a `logs/` y rotan cada día.
+bitácora de envíos. Para hacer una copia de seguridad, cierra el integrador y copia la carpeta `datos`
+entera (junto al `.sqlite` pueden quedar `-wal` y `-shm` con los últimos cambios). Los logs técnicos van
+a `logs/` y rotan cada día. Las dos carpetas viven dentro de la de instalación: no la borres al
+reinstalar.
 
 ## Seguridad
 

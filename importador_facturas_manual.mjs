@@ -60,4 +60,9 @@ app.use((err, _req, res, _next) => {
 const PORT = Number(process.env.PORT || 4000);
 app.listen(PORT, "127.0.0.1", () => {
   console.log(`Integrador escuchando en http://localhost:${PORT}`);
+}).on("error", (err) => {
+  // Dos dobles clics seguidos en iniciar.bat: el segundo encuentra el puerto ocupado (subtarea 7.1).
+  if (err.code !== "EADDRINUSE") throw err;
+  console.log(`El integrador ya está abierto en http://localhost:${PORT}`);
+  process.exit(0);
 });

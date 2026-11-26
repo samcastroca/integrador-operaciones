@@ -25,7 +25,8 @@ test("7.1 dos arranques seguidos no levantan dos servidores", { ...E, skip: proc
     const puerto = await puertoLibre();
     const env = { ...process.env, PORT: String(puerto), INTEGRADOR_SIN_NAVEGADOR: "1" };
     const lanzar = async () => {
-        const p = spawn("cmd.exe", ["/c", "iniciar.bat"], { cwd: raiz, env, stdio: "ignore", detached: true });
+        // Ruta absoluta: con NoDefaultCurrentDirectoryInExePath, cmd no busca en el directorio actual.
+        const p = spawn("cmd.exe", ["/c", path.join(raiz, "iniciar.bat")], { cwd: raiz, env, stdio: "ignore", detached: true });
         p.unref();
     };
     let pids = [];
