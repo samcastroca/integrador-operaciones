@@ -6,9 +6,9 @@ maneja desde el navegador.
 ## Antes de instalar
 
 - Windows 10 u 11, en el mismo equipo donde corre ContaPyme.
-- **Node.js 22 o 24 (LTS)**, descargado de https://nodejs.org (instalador de Windows, opciones por
-  defecto).
 - Conexión a internet: la necesitan la instalación y los envíos a Faktur.
+- No hace falta instalar nada antes: si el equipo no tiene Node.js 22 o 24, el instalador lo descarga
+  de nodejs.org dentro de la carpeta del integrador, sin permisos de administrador.
 - Los datos que pide la configuración: email y contraseña del usuario de ContaPyme, código de la
   aplicación (`iapp`), NIT de la empresa y token de Faktur.
 
@@ -61,8 +61,7 @@ Para restaurar, cierra el integrador y vuelve a poner esa carpeta en `C:\Integra
 
 | Qué pasa | Qué hacer |
 |---|---|
-| El instalador dice que no encuentra Node.js | Instala Node.js 22 o 24 desde https://nodejs.org, cierra la ventana azul y repite la instalación. |
-| El instalador dice que `npm ci` falló | Revisa la conexión a internet y repítelo. |
+| El instalador dice que no pudo instalar Node.js o que `npm ci` falló | Revisa la conexión a internet y repítelo. |
 | El acceso directo no abre el navegador | Abre http://localhost:4000 a mano. Si no carga, cierra la ventana negra y vuelve a abrir el acceso directo. |
 | Un envío falla | El motivo aparece en la tabla de fallidas y en **Historial** → **Ver**. Corrige el dato en ContaPyme si hace falta y pulsa **Reintentar las fallidas**. |
 | ContaPyme o Faktur no responden | En **Estado de la conexión**, prueba cada uno; si cambió algo (IP, contraseña, token), corrígelo en **Configuración**. |

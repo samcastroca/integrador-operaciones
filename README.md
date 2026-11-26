@@ -41,7 +41,7 @@ Navegador ──► Integrador (Node.js + Express, solo en 127.0.0.1:4000)
 ## Requisitos
 
 - Windows 10 u 11.
-- [Node.js](https://nodejs.org) 22 o 24.
+- [Node.js](https://nodejs.org) 22 o 24 (si falta, `instalar.ps1` lo instala en la carpeta).
 - Acceso al agente REST de ContaPyme (normalmente en el mismo equipo) y salida HTTPS hacia Faktur.
 
 ## Instalación y arranque
@@ -52,7 +52,9 @@ Una sola vez, desde la carpeta del integrador (por ejemplo `C:\IntegradorFaktur`
 powershell -ExecutionPolicy Bypass -File instalar.ps1
 ```
 
-Comprueba Node.js, ejecuta `npm ci` y crea el acceso directo **"Integrador Faktur"** en el escritorio.
+Usa Node.js 22 o 24 si el equipo lo tiene; si no, descarga Node 24 LTS portátil de nodejs.org en
+`node\` (comprobando su SHA-256, sin permisos de administrador). Después ejecuta `npm ci` y crea el
+acceso directo **"Integrador Faktur"** en el escritorio.
 Ese acceso directo abre `iniciar.bat`: arranca el integrador y abre **http://localhost:4000** en el
 navegador; si ya estaba abierto, solo abre el navegador. Mientras se usa, la ventana del integrador debe
 quedar abierta (se puede minimizar).

@@ -1,4 +1,6 @@
 node_modules/
+# Node.js portátil que descarga instalar.ps1 si el equipo no tiene Node 22 o 24
+/node/
 dist/
 .env
 *.log
